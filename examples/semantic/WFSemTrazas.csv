@@ -1,0 +1,169 @@
+CaseID,Activity,Timestamp,Actor,ActionType,ModelReference,Details
+Case_1,Start,1751565600,User,Start,https://ontologia.segittur.es/turismo/def/core/Inicio,estur:activityType=Initialization;estur:actorType=Traveler
+Case_1,Validate user access,1751565660,System,Authentication,https://ontologia.segittur.es/turismo/def/core/Autenticacion,estur:authMethod=OAuth2;estur:accessLevel=User
+Case_1,Search flights,1751565720,User,Query,https://ontologia.segittur.es/turismo/def/core/BuscarVuelos,estur:searchType=Flight;estur:searchChannel=Web
+Case_1,Consult options,1751565780,User,Query,https://ontologia.segittur.es/turismo/def/core/ConsultarOpciones,estur:resultCount=5;estur:preferredTime=Morning
+Case_1,View flight details,1751565900,System,InformationRequest,https://ontologia.segittur.es/turismo/def/core/VerDetallesVuelo,estur:flightCode=AF1234;estur:airline=Air France
+Case_1,Check real-time availability,1751566020,ReservationEngine,AvailabilityValidation,https://ontologia.segittur.es/turismo/def/core/VerificarDisponibilidadTiempoReal,estur:availability=true;estur:service=Flight
+Case_1,Enter personal data,1751566080,User,DataEntry,https://ontologia.segittur.es/turismo/def/core/IngresarDatosPersonales,estur:dataFields=Name-Email-Phone;estur:language=EN
+Case_1,Validate passport/ID,1751566140,DocumentValidationService,Verification,https://ontologia.segittur.es/turismo/def/core/ValidarIdentidad,estur:documentType=Passport;estur:validationSource=GovernmentAPI
+Case_1,Anti-fraud verification,1751566200,FraudSystem,FraudCheck,https://ontologia.segittur.es/turismo/def/core/VerificacionAntifraude,estur:fraudScore=Low;estur:fraudCheckMethod=MLModel
+Case_1,Confirm reservation,1751566260,System,Confirmation,https://ontologia.segittur.es/turismo/def/core/ConfirmarReserva,estur:confirmationMethod=Email+App;estur:status=Confirmed
+Case_2,Start,1751571600,User,Start,https://ontologia.segittur.es/turismo/def/core/Inicio,estur:activityType=Initialization;estur:actorType=Traveler
+Case_2,Validate user access,1751571665,System,Authentication,https://ontologia.segittur.es/turismo/def/core/Autenticacion,estur:authMethod=Password;estur:accessLevel=Admin
+Case_2,Search flights,1751571725,User,Query,https://ontologia.segittur.es/turismo/def/core/BuscarVuelos,estur:searchType=Flight;estur:searchChannel=Mobile
+Case_2,Consult options,1751571780,User,Query,https://ontologia.segittur.es/turismo/def/core/ConsultarOpciones,estur:resultCount=3;estur:preferredTime=Afternoon
+Case_2,View flight details,1751571900,System,InformationRequest,https://ontologia.segittur.es/turismo/def/core/VerDetallesVuelo,estur:flightCode=LH4321;estur:airline=Lufthansa
+Case_2,Check real-time availability,1751572025,ReservationEngine,AvailabilityValidation,https://ontologia.segittur.es/turismo/def/core/VerificarDisponibilidadTiempoReal,estur:availability=false;estur:service=Flight
+Case_2,Enter personal data,1751572090,User,DataEntry,https://ontologia.segittur.es/turismo/def/core/IngresarDatosPersonales,estur:dataFields=Name-Phone;estur:language=EN
+Case_2,Validate passport/ID,1751572145,DocumentValidationService,Verification,https://ontologia.segittur.es/turismo/def/core/ValidarIdentidad,estur:documentType=ID Card;estur:validationSource=ThirdParty
+Case_2,Anti-fraud verification,1751572210,FraudSystem,FraudCheck,https://ontologia.segittur.es/turismo/def/core/VerificacionAntifraude,estur:fraudScore=Medium;estur:fraudCheckMethod=RuleBased
+Case_2,Confirm reservation,1751572275,System,Confirmation,https://ontologia.segittur.es/turismo/def/core/ConfirmarReserva,estur:confirmationMethod=SMS;estur:status=Pending
+Case_3,Start,1751575800,User,Start,https://ontologia.segittur.es/turismo/def/core/Inicio,estur:activityType=Initialization;estur:actorRole=Traveler
+Case_3,Validate user access,1751575865,System,Authentication,https://ontologia.segittur.es/turismo/def/core/Autenticacion,estur:authMethod=Biometric;estur:accessLevel=User
+Case_3,Search flights,1751575920,User,Query,https://ontologia.segittur.es/turismo/def/core/BuscarVuelos,estur:searchType=Flight;estur:searchDevice=Tablet
+Case_3,Consult options,1751575980,User,Query,https://ontologia.segittur.es/turismo/def/core/ConsultarOpciones,estur:resultCount=8;estur:preferredClass=Economy
+Case_3,View flight details,1751576100,System,InformationRequest,https://ontologia.segittur.es/turismo/def/core/VerDetallesVuelo,estur:flightCode=BA5678;estur:airline=British Airways
+Case_3,Check real-time availability,1751576220,ReservationEngine,AvailabilityValidation,https://ontologia.segittur.es/turismo/def/core/VerificarDisponibilidadTiempoReal,estur:availability=true;estur:service=Flight
+Case_3,Enter personal data,1751576280,User,DataEntry,https://ontologia.segittur.es/turismo/def/core/IngresarDatosPersonales,estur:dataFields=Name-Email;estur:language=EN
+Case_3,Validate passport/ID,1751576340,DocumentValidationService,Verification,https://ontologia.segittur.es/turismo/def/core/ValidarIdentidad,estur:documentType=Passport;estur:validationSource=GovernmentAPI
+Case_3,Anti-fraud verification,1751576400,FraudSystem,FraudCheck,https://ontologia.segittur.es/turismo/def/core/VerificacionAntifraude,estur:fraudScore=Low;estur:fraudCheckMethod=Heuristic
+Case_3,Confirm reservation,1751576460,System,Confirmation,https://ontologia.segittur.es/turismo/def/core/ConfirmarReserva,estur:confirmationMethod=Email;estur:status=Confirmed
+Case_4,Start,1751580000,User,Start,https://ontologia.segittur.es/turismo/def/core/Inicio,estur:activityType=Initialization;estur:actorRole=Traveler
+Case_4,Validate user access,1751580065,System,Authentication,https://ontologia.segittur.es/turismo/def/core/Autenticacion,estur:authMethod=Password;estur:accessLevel=User
+Case_4,Search flights,1751580120,User,Query,https://ontologia.segittur.es/turismo/def/core/BuscarVuelos,estur:searchType=Flight;estur:searchChannel=Desktop
+Case_4,Consult options,1751580180,User,Query,https://ontologia.segittur.es/turismo/def/core/ConsultarOpciones,estur:resultCount=10;estur:preferredClass=Business
+Case_4,View flight details,1751580300,System,InformationRequest,https://ontologia.segittur.es/turismo/def/core/VerDetallesVuelo,estur:flightCode=UA7890;estur:airline=United Airlines
+Case_4,Check real-time availability,1751580420,ReservationEngine,AvailabilityValidation,https://ontologia.segittur.es/turismo/def/core/VerificarDisponibilidadTiempoReal,estur:availability=true;estur:service=Flight
+Case_4,Enter personal data,1751580480,User,DataEntry,https://ontologia.segittur.es/turismo/def/core/IngresarDatosPersonales,estur:dataFields=Name-Email-Phone;estur:language=EN
+Case_4,Validate passport/ID,1751580540,DocumentValidationService,Verification,https://ontologia.segittur.es/turismo/def/core/ValidarIdentidad,estur:documentType=ID Card;estur:validationSource=ThirdParty
+Case_4,Anti-fraud verification,1751580600,FraudSystem,FraudCheck,https://ontologia.segittur.es/turismo/def/core/VerificacionAntifraude,estur:fraudScore=High;estur:fraudCheckMethod=AIModel
+Case_4,Confirm reservation,1751580660,System,Confirmation,https://ontologia.segittur.es/turismo/def/core/ConfirmarReserva,estur:confirmationMethod=SMS;estur:status=Confirmed
+Case_5,Start,1751584200,User,Start,https://ontologia.segittur.es/turismo/def/core/Inicio,estur:activityType=Initialization;estur:actorRole=Traveler
+Case_5,Validate user access,1751584265,System,Authentication,https://ontologia.segittur.es/turismo/def/core/Autenticacion,estur:authMethod=TwoFactor;estur:accessLevel=User
+Case_5,Search flights,1751584320,User,Query,https://ontologia.segittur.es/turismo/def/core/BuscarVuelos,estur:searchType=Flight;estur:searchDevice=Smartphone
+Case_5,Consult options,1751584380,User,Query,https://ontologia.segittur.es/turismo/def/core/ConsultarOpciones,estur:resultCount=4;estur:preferredClass=Economy
+Case_5,View flight details,1751584500,System,InformationRequest,https://ontologia.segittur.es/turismo/def/core/VerDetallesVuelo,estur:flightCode=DL2345;estur:airline=Delta Airlines
+Case_5,Check real-time availability,1751584620,ReservationEngine,AvailabilityValidation,https://ontologia.segittur.es/turismo/def/core/VerificarDisponibilidadTiempoReal,estur:availability=true;estur:service=Flight
+Case_5,Enter personal data,1751584680,User,DataEntry,https://ontologia.segittur.es/turismo/def/core/IngresarDatosPersonales,estur:dataFields=Name-Email;estur:language=EN
+Case_5,Validate passport/ID,1751584740,DocumentValidationService,Verification,https://ontologia.segittur.es/turismo/def/core/ValidarIdentidad,estur:documentType=Passport;estur:validationSource=GovernmentAPI
+Case_5,Anti-fraud verification,1751584800,FraudSystem,FraudCheck,https://ontologia.segittur.es/turismo/def/core/VerificacionAntifraude,estur:fraudScore=Low;estur:fraudCheckMethod=Heuristic
+Case_5,Confirm reservation,1751584860,System,Confirmation,https://ontologia.segittur.es/turismo/def/core/ConfirmarReserva,estur:confirmationMethod=Email;estur:status=Confirmed
+Case_6,Start,1751587800,User,Start,https://ontologia.segittur.es/turismo/def/core/Inicio,estur:activityType=Initialization;estur:actorRole=Traveler
+Case_6,Validate user access,1751587865,System,Authentication,https://ontologia.segittur.es/turismo/def/core/Autenticacion,estur:authMethod=Password;estur:accessLevel=User
+Case_6,Search flights,1751587920,User,Query,https://ontologia.segittur.es/turismo/def/core/BuscarVuelos,estur:searchType=Flight;estur:searchChannel=MobileApp
+Case_6,Consult options,1751587980,User,Query,https://ontologia.segittur.es/turismo/def/core/ConsultarOpciones,estur:resultCount=7;estur:preferredClass=Business
+Case_6,View flight details,1751588100,System,InformationRequest,https://ontologia.segittur.es/turismo/def/core/VerDetallesVuelo,estur:flightCode=AA1234;estur:airline=American Airlines
+Case_6,Check real-time availability,1751588220,ReservationEngine,AvailabilityValidation,https://ontologia.segittur.es/turismo/def/core/VerificarDisponibilidadTiempoReal,estur:availability=true;estur:service=Flight
+Case_6,Enter personal data,1751588280,User,DataEntry,https://ontologia.segittur.es/turismo/def/core/IngresarDatosPersonales,estur:dataFields=Name-Email-Phone;estur:language=EN
+Case_6,Validate passport/ID,1751588340,DocumentValidationService,Verification,https://ontologia.segittur.es/turismo/def/core/ValidarIdentidad,estur:documentType=ID Card;estur:validationSource=GovernmentAPI
+Case_6,Anti-fraud verification,1751588400,FraudSystem,FraudCheck,https://ontologia.segittur.es/turismo/def/core/VerificacionAntifraude,estur:fraudScore=Medium;estur:fraudCheckMethod=RuleBased
+Case_6,Confirm reservation,1751588460,System,Confirmation,https://ontologia.segittur.es/turismo/def/core/ConfirmarReserva,estur:confirmationMethod=Email;estur:status=Confirmed
+Case_7,Start,1751591400,User,Start,https://ontologia.segittur.es/turismo/def/core/Inicio,estur:activityType=Initialization;estur:actorRole=Traveler
+Case_7,Validate user access,1751591465,System,Authentication,https://ontologia.segittur.es/turismo/def/core/Autenticacion,estur:authMethod=OTP;estur:accessLevel=User
+Case_7,Search flights,1751591520,User,Query,https://ontologia.segittur.es/turismo/def/core/BuscarVuelos,estur:searchType=Flight;estur:searchDevice=Desktop
+Case_7,Consult options,1751591580,User,Query,https://ontologia.segittur.es/turismo/def/core/ConsultarOpciones,estur:resultCount=12;estur:preferredClass=Economy
+Case_7,View flight details,1751591700,System,InformationRequest,https://ontologia.segittur.es/turismo/def/core/VerDetallesVuelo,estur:flightCode=LH3456;estur:airline=Lufthansa
+Case_7,Check real-time availability,1751591820,ReservationEngine,AvailabilityValidation,https://ontologia.segittur.es/turismo/def/core/VerificarDisponibilidadTiempoReal,estur:availability=true;estur:service=Flight
+Case_7,Enter personal data,1751591880,User,DataEntry,https://ontologia.segittur.es/turismo/def/core/IngresarDatosPersonales,estur:dataFields=Name-Email;estur:language=EN
+Case_7,Validate passport/ID,1751591940,DocumentValidationService,Verification,https://ontologia.segittur.es/turismo/def/core/ValidarIdentidad,estur:documentType=Passport;estur:validationSource=ThirdParty
+Case_7,Anti-fraud verification,1751592000,FraudSystem,FraudCheck,https://ontologia.segittur.es/turismo/def/core/VerificacionAntifraude,estur:fraudScore=Low;estur:fraudCheckMethod=AIModel
+Case_7,Confirm reservation,1751592060,System,Confirmation,https://ontologia.segittur.es/turismo/def/core/ConfirmarReserva,estur:confirmationMethod=Email;estur:status=Confirmed
+Case_8,Start,1751595000,User,Start,https://ontologia.segittur.es/turismo/def/core/Inicio,estur:activityType=Initialization;estur:actorRole=Traveler
+Case_8,Validate user access,1751595065,System,Authentication,https://ontologia.segittur.es/turismo/def/core/Autenticacion,estur:authMethod=Password;estur:accessLevel=User
+Case_8,Search flights,1751595120,User,Query,https://ontologia.segittur.es/turismo/def/core/BuscarVuelos,estur:searchType=Flight;estur:searchChannel=MobileWeb
+Case_8,Consult options,1751595180,User,Query,https://ontologia.segittur.es/turismo/def/core/ConsultarOpciones,estur:resultCount=5;estur:preferredClass=Economy
+Case_8,View flight details,1751595300,System,InformationRequest,https://ontologia.segittur.es/turismo/def/core/VerDetallesVuelo,estur:flightCode=AF6789;estur:airline=Air France
+Case_8,Check real-time availability,1751595420,ReservationEngine,AvailabilityValidation,https://ontologia.segittur.es/turismo/def/core/VerificarDisponibilidadTiempoReal,estur:availability=true;estur:service=Flight
+Case_8,Enter personal data,1751595480,User,DataEntry,https://ontologia.segittur.es/turismo/def/core/IngresarDatosPersonales,estur:dataFields=Name-Email-Address;estur:language=EN
+Case_8,Validate passport/ID,1751595540,DocumentValidationService,Verification,https://ontologia.segittur.es/turismo/def/core/ValidarIdentidad,estur:documentType=Passport;estur:validationSource=GovernmentAPI
+Case_8,Anti-fraud verification,1751595600,FraudSystem,FraudCheck,https://ontologia.segittur.es/turismo/def/core/VerificacionAntifraude,estur:fraudScore=Medium;estur:fraudCheckMethod=RuleBased
+Case_8,Confirm reservation,1751595660,System,Confirmation,https://ontologia.segittur.es/turismo/def/core/ConfirmarReserva,estur:confirmationMethod=SMS;estur:status=Confirmed
+Case_9,Start,1751598600,User,Start,https://ontologia.segittur.es/turismo/def/core/Inicio,estur:activityType=Initialization;estur:actorRole=Traveler
+Case_9,Validate user access,1751598665,System,Authentication,https://ontologia.segittur.es/turismo/def/core/Autenticacion,estur:authMethod=TwoFactor;estur:accessLevel=User
+Case_9,Search flights,1751598720,User,Query,https://ontologia.segittur.es/turismo/def/core/BuscarVuelos,estur:searchType=Flight;estur:searchDevice=Tablet
+Case_9,Consult options,1751598780,User,Query,https://ontologia.segittur.es/turismo/def/core/ConsultarOpciones,estur:resultCount=9;estur:preferredClass=Business
+Case_9,View flight details,1751598900,System,InformationRequest,https://ontologia.segittur.es/turismo/def/core/VerDetallesVuelo,estur:flightCode=EK1234;estur:airline=Emirates
+Case_9,Check real-time availability,1751599020,ReservationEngine,AvailabilityValidation,https://ontologia.segittur.es/turismo/def/core/VerificarDisponibilidadTiempoReal,estur:availability=true;estur:service=Flight
+Case_9,Enter personal data,1751599080,User,DataEntry,https://ontologia.segittur.es/turismo/def/core/IngresarDatosPersonales,estur:dataFields=Name-Email;estur:language=EN
+Case_9,Validate passport/ID,1751599140,DocumentValidationService,Verification,https://ontologia.segittur.es/turismo/def/core/ValidarIdentidad,estur:documentType=Passport;estur:validationSource=ThirdParty
+Case_9,Anti-fraud verification,1751599200,FraudSystem,FraudCheck,https://ontologia.segittur.es/turismo/def/core/VerificacionAntifraude,estur:fraudScore=Low;estur:fraudCheckMethod=Heuristic
+Case_9,Confirm reservation,1751599260,System,Confirmation,https://ontologia.segittur.es/turismo/def/core/ConfirmarReserva,estur:confirmationMethod=Email;estur:status=Confirmed
+Case_10,Start,1751602200,User,Start,https://ontologia.segittur.es/turismo/def/core/Inicio,estur:activityType=Initialization;estur:actorRole=Traveler
+Case_10,Validate user access,1751602265,System,Authentication,https://ontologia.segittur.es/turismo/def/core/Autenticacion,estur:authMethod=Password;estur:accessLevel=User
+Case_10,Search flights,1751602320,User,Query,https://ontologia.segittur.es/turismo/def/core/BuscarVuelos,estur:searchType=Flight;estur:searchChannel=Desktop
+Case_10,Consult options,1751602380,User,Query,https://ontologia.segittur.es/turismo/def/core/ConsultarOpciones,estur:resultCount=6;estur:preferredClass=Economy
+Case_10,View flight details,1751602500,System,InformationRequest,https://ontologia.segittur.es/turismo/def/core/VerDetallesVuelo,estur:flightCode=QF5678;estur:airline=Qantas
+Case_10,Check real-time availability,1751602620,ReservationEngine,AvailabilityValidation,https://ontologia.segittur.es/turismo/def/core/VerificarDisponibilidadTiempoReal,estur:availability=true;estur:service=Flight
+Case_10,Enter personal data,1751602680,User,DataEntry,https://ontologia.segittur.es/turismo/def/core/IngresarDatosPersonales,estur:dataFields=Name-Email-Phone;estur:language=EN
+Case_10,Validate passport/ID,1751602740,DocumentValidationService,Verification,https://ontologia.segittur.es/turismo/def/core/ValidarIdentidad,estur:documentType=ID Card;estur:validationSource=GovernmentAPI
+Case_10,Anti-fraud verification,1751602800,FraudSystem,FraudCheck,https://ontologia.segittur.es/turismo/def/core/VerificacionAntifraude,estur:fraudScore=Medium;estur:fraudCheckMethod=AIModel
+Case_10,Confirm reservation,1751602860,System,Confirmation,https://ontologia.segittur.es/turismo/def/core/ConfirmarReserva,estur:confirmationMethod=Email;estur:status=Confirmed
+Case_11,Start,1751605000,User,Start,https://ontologia.segittur.es/turismo/def/core/Inicio,estur:activityType=Initialization;estur:actorRole=Traveler
+Case_11,Validate user access,1751605060,System,Authentication,https://ontologia.segittur.es/turismo/def/core/Autenticacion,estur:authMethod=Password;estur:accessLevel=User
+Case_11,Search flights,1751605120,User,Query,https://ontologia.segittur.es/turismo/def/core/BuscarVuelos,estur:searchType=Flight;estur:searchChannel=Desktop
+Case_11,Anti-fraud verification,1751605180,FraudSystem,FraudCheck,https://ontologia.segittur.es/turismo/def/core/VerificacionAntifraude,estur:fraudScore=High;estur:fraudCheckMethod=AIModel;violation=FraudCheckBeforeIDValidation
+Case_11,Validate passport/ID,1751605240,DocumentValidationService,Verification,https://ontologia.segittur.es/turismo/def/core/ValidarIdentidad,estur:documentType=Passport;estur:validationSource=GovernmentAPI
+Case_11,Select flight,1751605300,User,Selection,https://ontologia.segittur.es/turismo/def/core/SeleccionarVuelo,estur:flightCode=BA987;estur:airline=British Airways
+Case_11,Enter personal data,1751605360,User,DataEntry,https://ontologia.segittur.es/turismo/def/core/IngresarDatosPersonales,estur:dataFields=Name-Email;estur:language=EN
+Case_11,Confirm reservation,1751605420,System,Confirmation,https://ontologia.segittur.es/turismo/def/core/ConfirmarReserva,estur:confirmationMethod=Email;estur:status=Confirmed;violation=ConfirmedWithoutTicketRegistration
+Case_12,Start,1751608500,User,Start,https://ontologia.segittur.es/turismo/def/core/Inicio,estur:activityType=Initialization;estur:actorRole=Traveler
+Case_12,Validate user access,1751608560,System,Authentication,https://ontologia.segittur.es/turismo/def/core/Autenticacion,estur:authMethod=OTP;estur:accessLevel=User
+Case_12,Search flights,1751608620,User,Query,https://ontologia.segittur.es/turismo/def/core/BuscarVuelos,estur:searchType=Flight;estur:searchDevice=Mobile
+Case_12,Enter personal data,1751608680,User,DataEntry,https://ontologia.segittur.es/turismo/def/core/IngresarDatosPersonales,estur:dataFields=Name-Phone;estur:language=EN;violation=NoIDValidationBeforePayment
+Case_12,Anti-fraud verification,1751608740,FraudSystem,FraudCheck,https://ontologia.segittur.es/turismo/def/core/VerificacionAntifraude,estur:fraudScore=Low;estur:fraudCheckMethod=RuleBased
+Case_12,Pay with card,1751608800,User,Payment,https://ontologia.segittur.es/turismo/def/core/PagoConTarjeta,estur:paymentMethod=CreditCard
+Case_12,Process payment,1751608860,PaymentGateway,Processing,https://ontologia.segittur.es/turismo/def/core/ProcesarPago,estur:gateway=Stripe
+Case_12,Confirm reservation,1751608920,System,Confirmation,https://ontologia.segittur.es/turismo/def/core/ConfirmarReserva,estur:confirmationMethod=Email;estur:status=Confirmed;violation=ConfirmedWithoutTicketRegistration
+Case_13,Start,1751611500,User,Start,https://ontologia.segittur.es/turismo/def/core/Inicio,estur:activityType=Initialization;estur:actorRole=Traveler
+Case_13,Validate user access,1751611560,System,Authentication,https://ontologia.segittur.es/turismo/def/core/Autenticacion,estur:authMethod=Password;estur:accessLevel=User
+Case_13,Search flights,1751611620,User,Query,https://ontologia.segittur.es/turismo/def/core/BuscarVuelos,estur:searchType=Flight;estur:searchChannel=Web
+Case_13,Consult options,1751611680,User,Query,https://ontologia.segittur.es/turismo/def/core/ConsultarOpciones,estur:resultCount=8;estur:preferredClass=Economy
+Case_13,Pay with PayPal,1751611740,User,Payment,https://ontologia.segittur.es/turismo/def/core/PagoConPayPal,estur:paymentMethod=PayPal;violation=NoIDValidationBeforePayment
+Case_13,Process payment,1751611800,PaymentGateway,Processing,https://ontologia.segittur.es/turismo/def/core/ProcesarPago,estur:gateway=PayPalAPI
+Case_13,Confirm reservation,1751611860,System,Confirmation,https://ontologia.segittur.es/turismo/def/core/ConfirmarReserva,estur:confirmationMethod=Email;estur:status=Confirmed;violation=ConfirmedWithoutTicketRegistration
+Case_14,Start,1751614800,User,Start,https://ontologia.segittur.es/turismo/def/core/Inicio,estur:activityType=Initialization;estur:actorRole=Traveler
+Case_14,Validate user access,1751614860,System,Authentication,https://ontologia.segittur.es/turismo/def/core/Autenticacion,estur:authMethod=Password;estur:accessLevel=User
+Case_14,Search flights,1751614920,User,Query,https://ontologia.segittur.es/turismo/def/core/BuscarVuelos,estur:searchType=Flight;estur:searchChannel=Desktop
+Case_14,Consult options,1751614980,User,Query,https://ontologia.segittur.es/turismo/def/core/ConsultarOpciones,estur:resultCount=10;estur:preferredClass=Business
+Case_14,Enter personal data,1751615040,User,DataEntry,https://ontologia.segittur.es/turismo/def/core/IngresarDatosPersonales,estur:dataFields=Name-Email;estur:language=EN
+Case_14,Anti-fraud verification,1751615100,FraudSystem,FraudCheck,https://ontologia.segittur.es/turismo/def/core/VerificacionAntifraude,estur:fraudScore=High;estur:fraudCheckMethod=RuleBased;violation=FraudCheckBeforeIDValidation
+Case_14,Validate passport/ID,1751615160,DocumentValidationService,Verification,https://ontologia.segittur.es/turismo/def/core/ValidarIdentidad,estur:documentType=Passport;estur:validationSource=GovernmentAPI
+Case_14,Pay with card,1751615220,User,Payment,https://ontologia.segittur.es/turismo/def/core/PagoConTarjeta,estur:paymentMethod=CreditCard
+Case_14,Process payment,1751615280,PaymentGateway,Processing,https://ontologia.segittur.es/turismo/def/core/ProcesarPago,estur:gateway=Stripe
+Case_14,Confirm reservation,1751615340,System,Confirmation,https://ontologia.segittur.es/turismo/def/core/ConfirmarReserva,estur:confirmationMethod=Email;estur:status=Confirmed;violation=ConfirmedWithoutTicketRegistration
+Case_15,Start,1751618400,User,Start,https://ontologia.segittur.es/turismo/def/core/Inicio,estur:activityType=Initialization;estur:actorRole=Traveler
+Case_15,Validate user access,1751618460,System,Authentication,https://ontologia.segittur.es/turismo/def/core/Autenticacion,estur:authMethod=Password;estur:accessLevel=User
+Case_15,Search flights,1751618520,User,Query,https://ontologia.segittur.es/turismo/def/core/BuscarVuelos,estur:searchType=Flight;estur:searchChannel=MobileApp
+Case_15,Consult options,1751618580,User,Query,https://ontologia.segittur.es/turismo/def/core/ConsultarOpciones,estur:resultCount=7;estur:preferredClass=Economy
+Case_15,Enter personal data,1751618640,User,DataEntry,https://ontologia.segittur.es/turismo/def/core/IngresarDatosPersonales,estur:dataFields=Name-Email-Phone;estur:language=EN;violation=NoIDValidationBeforePayment
+Case_15,Pay with PayPal,1751618700,User,Payment,https://ontologia.segittur.es/turismo/def/core/PagoConPayPal,estur:paymentMethod=PayPal
+Case_15,Process payment,1751618760,PaymentGateway,Processing,https://ontologia.segittur.es/turismo/def/core/ProcesarPago,estur:gateway=PayPalAPI
+Case_15,Confirm reservation,1751618820,System,Confirmation,https://ontologia.segittur.es/turismo/def/core/ConfirmarReserva,estur:confirmationMethod=Email;estur:status=Confirmed;violation=ConfirmedWithoutTicketRegistration
+Case_16,Start,1751622000,User,Start,https://ontologia.segittur.es/turismo/def/core/Inicio,estur:activityType=Initialization;estur:actorRole=Traveler
+Case_16,Validate user access,1751622060,System,Authentication,https://ontologia.segittur.es/turismo/def/core/Autenticacion,estur:authMethod=Password;estur:accessLevel=User
+Case_16,Search flights,1751622120,User,Query,https://ontologia.segittur.es/turismo/def/core/BuscarVuelos,estur:searchType=Flight;estur:flightClass=Economy;estur:searchCount=1
+Case_16,Search flights,1751622180,User,Query,https://ontologia.segittur.es/turismo/def/core/BuscarVuelos,estur:searchType=Flight;estur:flightClass=Economy;estur:searchCount=2
+Case_16,Search flights,1751622240,User,Query,https://ontologia.segittur.es/turismo/def/core/BuscarVuelos,estur:searchType=Flight;estur:flightClass=Economy;estur:searchCount=3
+Case_16,Consult options,1751622300,User,Query,https://ontologia.segittur.es/turismo/def/core/ConsultarOpciones,estur:preferredClass=Economy;estur:resultCount=5
+Case_16,Select flight,1751622360,User,Selection,https://ontologia.segittur.es/turismo/def/core/SeleccionarVuelo,estur:flightCode=FR123;estur:airline=Ryanair
+Case_16,Enter personal data,1751622420,User,DataEntry,https://ontologia.segittur.es/turismo/def/core/IngresarDatosPersonales,estur:dataFields=Name-Email;estur:language=EN
+Case_16,Validate passport/ID,1751622480,DocumentValidationService,Verification,https://ontologia.segittur.es/turismo/def/core/ValidarIdentidad,estur:documentType=Passport;estur:validationSource=GovernmentAPI
+Case_16,Anti-fraud verification,1751622540,FraudSystem,FraudCheck,https://ontologia.segittur.es/turismo/def/core/VerificacionAntifraude,estur:fraudScore=Low;estur:fraudCheckMethod=RuleBased
+Case_16,Pay with card,1751622600,User,Payment,https://ontologia.segittur.es/turismo/def/core/PagoConTarjeta,estur:paymentMethod=CreditCard
+Case_16,Process payment,1751622660,PaymentGateway,Processing,https://ontologia.segittur.es/turismo/def/core/ProcesarPago,estur:gateway=Stripe
+Case_16,Confirm reservation,1751622720,System,Confirmation,https://ontologia.segittur.es/turismo/def/core/ConfirmarReserva,estur:confirmationMethod=Email;estur:status=Confirmed
+Case_16,Register ticket,1751622780,System,Registration,https://ontologia.segittur.es/turismo/def/core/RegistrarBillete,estur:ticketType=Electronic;estur:registrationStatus=Success
+Case_16,End,1751622840,System,End,https://ontologia.segittur.es/turismo/def/core/Fin,estur:activityType=Completion
+Case_17,Start,1751622000,User,Start,https://ontologia.segittur.es/turismo/def/core/Inicio,estur:userID=User_12345;estur:activityType=Initialization
+Case_17,Validate user access,1751622060,System,Authentication,https://ontologia.segittur.es/turismo/def/core/Autenticacion,estur:userID=User_12345;estur:authMethod=Password
+Case_17,Search flights,1751622120,User,Query,https://ontologia.segittur.es/turismo/def/core/BuscarVuelos,estur:userID=User_12345;estur:flightClass=Business
+Case_17,Select flight,1751622180,User,Selection,https://ontologia.segittur.es/turismo/def/core/SeleccionarVuelo,estur:userID=User_12345;estur:selectedFlight=IB1234
+Case_17,Enter personal data,1751622240,User,DataEntry,https://ontologia.segittur.es/turismo/def/core/IngresarDatosPersonales,estur:userID=User_12345;estur:infoProvided=Full
+Case_17,Validate passport/ID,1751622300,DocumentValidationService,Verification,https://ontologia.segittur.es/turismo/def/core/ValidarIdentidad,estur:userID=User_12345;estur:documentType=Passport
+Case_17,Anti-fraud verification,1751622360,FraudSystem,FraudCheck,https://ontologia.segittur.es/turismo/def/core/VerificacionAntifraude,estur:userID=User_12345;estur:fraudScore=Low
+Case_17,Pay with PayPal,1751622420,User,Payment,https://ontologia.segittur.es/turismo/def/core/PagoConPayPal,estur:userID=User_12345;estur:paymentMethod=PayPal
+Case_17,Process payment,1751622480,PaymentGateway,Processing,https://ontologia.segittur.es/turismo/def/core/ProcesarPago,estur:gateway=PayPalAPI;estur:transactionStatus=Success
+Case_17,Confirm reservation,1751622540,System,Confirmation,https://ontologia.segittur.es/turismo/def/core/ConfirmarReserva,estur:userID=User_12345;estur:confirmationStatus=Confirmed
+Case_17,Register ticket,1751622600,System,Registration,https://ontologia.segittur.es/turismo/def/core/RegistrarBillete,estur:userID=User_12345;estur:ticketStatus=Issued
+Case_17,End,1751622660,System,End,https://ontologia.segittur.es/turismo/def/core/Fin,estur:userID=User_12345;estur:activityType=Completion

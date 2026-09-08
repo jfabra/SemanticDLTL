@@ -1,0 +1,7 @@
+
+;some macros
+_SET ?LAST "!X true"
+
+_SET ?X 'a','_','b','_','c','d','_'
+
+

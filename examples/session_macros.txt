@@ -1,0 +1,22 @@
+_SET ?acts ac_Check_real_time_availability,ac_End,ac_Start
+_SET ?acts2 ac_Activity,at_InformationRequest
+
+F( ?acts | X F ?acts2)
+
+;F x.("(x)int(x['Details'].get('estur:resultCount', '0'))>=5+3") 
+
+
+_RE ?ac ac_.+
+_RE ?at at_.+
+
+F( ?ac | ?at)
+
+_RANGE ?r 1,10,1
+F x?r
+
+_RANGE ?r 1,10,2
+F x?r
+agur
+
+
+

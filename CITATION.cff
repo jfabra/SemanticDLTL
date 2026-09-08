@@ -1,0 +1,32 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite the paper below."
+type: software
+title: "SemanticDLTL: a DLTL model checker over finite traces"
+authors:
+  - family-names: Ezpeleta
+    given-names: Joaquín
+    affiliation: Universidad de Zaragoza, Spain
+  - family-names: Fabra
+    given-names: Javier
+    affiliation: Universidad de Zaragoza, Spain
+  - family-names: Ibáñez
+    given-names: María José
+    affiliation: Universidad de La Rioja, Spain
+contact:
+  - name: SemanticDLTL team
+    email: semanticdltl@unizar.es
+version: 1.0.0
+license: GPL-3.0-or-later
+preferred-citation:
+  type: conference-paper
+  title: "A Linear Temporal Logic Model Checking Method over Finite Words with Correlated Transition Attributes"
+  authors:
+    - family-names: Couvreur
+      given-names: Jean-Michel
+    - family-names: Ezpeleta
+      given-names: Joaquín
+  collection-title: "Data-Driven Process Discovery and Analysis (SIMPDA 2017), Lecture Notes in Business Information Processing, vol. 340"
+  publisher:
+    name: Springer
+  year: 2019
+  url: "https://hal.science/hal-01944569v1"
