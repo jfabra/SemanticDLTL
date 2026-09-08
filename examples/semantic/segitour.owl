@@ -1,0 +1,269 @@
+<?xml version="1.0"?>
+<rdf:RDF xmlns="https://ontologia.segittur.es/turismo/def/core#"
+    xml:base="https://ontologia.segittur.es/turismo/def/core"
+    xmlns:estur="https://ontologia.segittur.es/turismo/def/core#"
+    xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
+    xmlns:owl="http://www.w3.org/2002/07/owl#"
+    xmlns:xsd="http://www.w3.org/2001/XMLSchema#"
+    xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+
+  <owl:Ontology rdf:about="https://ontologia.segittur.es/turismo/def/core">
+    <rdfs:comment xml:lang="es">Ontología para modelar actividades turísticas, actores, autenticación, búsqueda, pago y confirmación con propiedades detalladas.</rdfs:comment>
+  </owl:Ontology>
+
+  <!-- Clases -->
+  <owl:Class rdf:about="estur:Activity">
+    <rdfs:comment xml:lang="es">Clase que representa una actividad o evento dentro del proceso de turismo.</rdfs:comment>
+  </owl:Class>
+
+  <owl:Class rdf:about="estur:Actor">
+    <rdfs:comment xml:lang="es">Clase que representa al actor participante en una actividad (usuario, sistema, etc.).</rdfs:comment>
+  </owl:Class>
+
+  <owl:Class rdf:about="estur:AuthenticationSystem">
+    <rdfs:comment xml:lang="es">Sistema encargado de la autenticación del usuario.</rdfs:comment>
+  </owl:Class>
+
+  <owl:Class rdf:about="estur:FlightSearch">
+    <rdfs:comment xml:lang="es">Actividad específica de búsqueda de vuelos.</rdfs:comment>
+  </owl:Class>
+
+  <owl:Class rdf:about="estur:Payment">
+    <rdfs:comment xml:lang="es">Actividad relacionada con el pago en el sistema.</rdfs:comment>
+  </owl:Class>
+
+  <owl:Class rdf:about="estur:Confirmation">
+    <rdfs:comment xml:lang="es">Confirmación de la reserva o actividad.</rdfs:comment>
+  </owl:Class>
+
+  <owl:Class rdf:about="estur:DocumentValidation">
+    <rdfs:comment xml:lang="es">Validación de documentos como pasaporte o identificación.</rdfs:comment>
+  </owl:Class>
+
+  <owl:Class rdf:about="estur:FraudCheck">
+    <rdfs:comment xml:lang="es">Proceso de verificación antifraude.</rdfs:comment>
+  </owl:Class>
+
+  <owl:Class rdf:about="estur:TicketRegistration">
+    <rdfs:comment xml:lang="es">Registro del billete o ticket de viaje.</rdfs:comment>
+  </owl:Class>
+
+  <!-- Propiedades de datos -->
+
+  <owl:DatatypeProperty rdf:about="estur:activityType">
+    <rdfs:comment xml:lang="es">Tipo de actividad (ej. Initialization).</rdfs:comment>
+    <rdfs:domain rdf:resource="estur:Activity"/>
+    <rdfs:range rdf:resource="xsd:string"/>
+  </owl:DatatypeProperty>
+
+  <owl:DatatypeProperty rdf:about="estur:actorType">
+    <rdfs:comment xml:lang="es">Tipo de actor (ej. Traveler, System, FraudSystem, etc.).</rdfs:comment>
+    <rdfs:domain rdf:resource="estur:Actor"/>
+    <rdfs:range rdf:resource="xsd:string"/>
+  </owl:DatatypeProperty>
+
+  <owl:DatatypeProperty rdf:about="estur:actorRole">
+    <rdfs:comment xml:lang="es">Rol del actor (ej. Traveler).</rdfs:comment>
+    <rdfs:domain rdf:resource="estur:Actor"/>
+    <rdfs:range rdf:resource="xsd:string"/>
+  </owl:DatatypeProperty>
+
+  <owl:DatatypeProperty rdf:about="estur:authMethod">
+    <rdfs:comment xml:lang="es">Método de autenticación (OAuth2, Biometric, Password, OTP, TwoFactor, etc.).</rdfs:comment>
+    <rdfs:domain rdf:resource="estur:AuthenticationSystem"/>
+    <rdfs:range rdf:resource="xsd:string"/>
+  </owl:DatatypeProperty>
+
+  <owl:DatatypeProperty rdf:about="estur:accessLevel">
+    <rdfs:comment xml:lang="es">Nivel de acceso (User, Admin).</rdfs:comment>
+    <rdfs:domain rdf:resource="estur:AuthenticationSystem"/>
+    <rdfs:range rdf:resource="xsd:string"/>
+  </owl:DatatypeProperty>
+
+  <owl:DatatypeProperty rdf:about="estur:searchType">
+    <rdfs:comment xml:lang="es">Tipo de búsqueda (ej. Flight).</rdfs:comment>
+    <rdfs:domain rdf:resource="estur:FlightSearch"/>
+    <rdfs:range rdf:resource="xsd:string"/>
+  </owl:DatatypeProperty>
+
+  <owl:DatatypeProperty rdf:about="estur:searchChannel">
+    <rdfs:comment xml:lang="es">Canal de búsqueda (Web, Mobile, Desktop, MobileApp, MobileWeb).</rdfs:comment>
+    <rdfs:domain rdf:resource="estur:FlightSearch"/>
+    <rdfs:range rdf:resource="xsd:string"/>
+  </owl:DatatypeProperty>
+
+  <owl:DatatypeProperty rdf:about="estur:searchDevice">
+    <rdfs:comment xml:lang="es">Dispositivo de búsqueda (Tablet, Smartphone, Desktop).</rdfs:comment>
+    <rdfs:domain rdf:resource="estur:FlightSearch"/>
+    <rdfs:range rdf:resource="xsd:string"/>
+  </owl:DatatypeProperty>
+
+  <owl:DatatypeProperty rdf:about="estur:resultCount">
+    <rdfs:comment xml:lang="es">Número de resultados consultados.</rdfs:comment>
+    <rdfs:domain rdf:resource="estur:FlightSearch"/>
+    <rdfs:range rdf:resource="xsd:integer"/>
+  </owl:DatatypeProperty>
+
+  <owl:DatatypeProperty rdf:about="estur:preferredTime">
+    <rdfs:comment xml:lang="es">Tiempo preferido (Morning, Afternoon).</rdfs:comment>
+    <rdfs:domain rdf:resource="estur:FlightSearch"/>
+    <rdfs:range rdf:resource="xsd:string"/>
+  </owl:DatatypeProperty>
+
+  <owl:DatatypeProperty rdf:about="estur:preferredClass">
+    <rdfs:comment xml:lang="es">Clase preferida (Economy, Business).</rdfs:comment>
+    <rdfs:domain rdf:resource="estur:FlightSearch"/>
+    <rdfs:range rdf:resource="xsd:string"/>
+  </owl:DatatypeProperty>
+
+  <owl:DatatypeProperty rdf:about="estur:flightCode">
+    <rdfs:comment xml:lang="es">Código de vuelo.</rdfs:comment>
+    <rdfs:domain rdf:resource="estur:FlightSearch"/>
+    <rdfs:range rdf:resource="xsd:string"/>
+  </owl:DatatypeProperty>
+
+  <owl:DatatypeProperty rdf:about="estur:airline">
+    <rdfs:comment xml:lang="es">Nombre de la aerolínea.</rdfs:comment>
+    <rdfs:domain rdf:resource="estur:FlightSearch"/>
+    <rdfs:range rdf:resource="xsd:string"/>
+  </owl:DatatypeProperty>
+
+  <owl:DatatypeProperty rdf:about="estur:availability">
+    <rdfs:comment xml:lang="es">Disponibilidad (true/false).</rdfs:comment>
+    <rdfs:domain rdf:resource="estur:FlightSearch"/>
+    <rdfs:range rdf:resource="xsd:boolean"/>
+  </owl:DatatypeProperty>
+
+  <owl:DatatypeProperty rdf:about="estur:service">
+    <rdfs:comment xml:lang="es">Servicio consultado (ej. Flight).</rdfs:comment>
+    <rdfs:domain rdf:resource="estur:Activity"/>
+    <rdfs:range rdf:resource="xsd:string"/>
+  </owl:DatatypeProperty>
+
+  <owl:DatatypeProperty rdf:about="estur:dataFields">
+    <rdfs:comment xml:lang="es">Campos de datos introducidos (ej. Name, Email, Phone, Address).</rdfs:comment>
+    <rdfs:domain rdf:resource="estur:Activity"/>
+    <rdfs:range rdf:resource="xsd:string"/>
+  </owl:DatatypeProperty>
+
+  <owl:DatatypeProperty rdf:about="estur:language">
+    <rdfs:comment xml:lang="es">Idioma (ej. EN).</rdfs:comment>
+    <rdfs:domain rdf:resource="estur:Activity"/>
+    <rdfs:range rdf:resource="xsd:string"/>
+  </owl:DatatypeProperty>
+
+  <owl:DatatypeProperty rdf:about="estur:documentType">
+    <rdfs:comment xml:lang="es">Tipo de documento (Passport, ID Card).</rdfs:comment>
+    <rdfs:domain rdf:resource="estur:DocumentValidation"/>
+    <rdfs:range rdf:resource="xsd:string"/>
+  </owl:DatatypeProperty>
+
+  <owl:DatatypeProperty rdf:about="estur:validationSource">
+    <rdfs:comment xml:lang="es">Fuente de validación (GovernmentAPI, ThirdParty).</rdfs:comment>
+    <rdfs:domain rdf:resource="estur:DocumentValidation"/>
+    <rdfs:range rdf:resource="xsd:string"/>
+  </owl:DatatypeProperty>
+
+  <owl:DatatypeProperty rdf:about="estur:fraudScore">
+    <rdfs:comment xml:lang="es">Puntuación antifraude (Low, Medium, High).</rdfs:comment>
+    <rdfs:domain rdf:resource="estur:FraudCheck"/>
+    <rdfs:range rdf:resource="xsd:string"/>
+  </owl:DatatypeProperty>
+
+    <owl:DatatypeProperty rdf:about="estur:fraudCheckMethod">
+    <rdfs:comment xml:lang="es">Método de verificación antifraude (RuleBased, AIModel, Heuristic, MLModel).</rdfs:comment>
+    <rdfs:domain rdf:resource="estur:FraudCheck"/>
+    <rdfs:range rdf:resource="xsd:string"/>
+  </owl:DatatypeProperty>
+
+  <owl:DatatypeProperty rdf:about="estur:confirmationMethod">
+    <rdfs:comment xml:lang="es">Método de confirmación (Email, SMS, Email+App).</rdfs:comment>
+    <rdfs:domain rdf:resource="estur:Confirmation"/>
+    <rdfs:range rdf:resource="xsd:string"/>
+  </owl:DatatypeProperty>
+
+  <owl:DatatypeProperty rdf:about="estur:status">
+    <rdfs:comment xml:lang="es">Estado de la confirmación (Confirmed, Pending).</rdfs:comment>
+    <rdfs:domain rdf:resource="estur:Confirmation"/>
+    <rdfs:range rdf:resource="xsd:string"/>
+  </owl:DatatypeProperty>
+
+  <owl:DatatypeProperty rdf:about="estur:paymentMethod">
+    <rdfs:comment xml:lang="es">Método de pago (CreditCard, PayPal, etc.).</rdfs:comment>
+    <rdfs:domain rdf:resource="estur:Payment"/>
+    <rdfs:range rdf:resource="xsd:string"/>
+  </owl:DatatypeProperty>
+
+  <owl:DatatypeProperty rdf:about="estur:gateway">
+    <rdfs:comment xml:lang="es">Pasarela o gateway de pago utilizado (Stripe, PayPalAPI, etc.).</rdfs:comment>
+    <rdfs:domain rdf:resource="estur:Payment"/>
+    <rdfs:range rdf:resource="xsd:string"/>
+  </owl:DatatypeProperty>
+
+  <owl:DatatypeProperty rdf:about="estur:violation">
+    <rdfs:comment xml:lang="es">Violación detectada (FraudCheckBeforeIDValidation, NoIDValidationBeforePayment, etc.).</rdfs:comment>
+    <rdfs:domain rdf:resource="estur:FraudCheck"/>
+    <rdfs:range rdf:resource="xsd:string"/>
+  </owl:DatatypeProperty>
+
+  <owl:DatatypeProperty rdf:about="estur:flightClass">
+    <rdfs:comment xml:lang="es">Clase del vuelo (Economy, Business).</rdfs:comment>
+    <rdfs:domain rdf:resource="estur:FlightSearch"/>
+    <rdfs:range rdf:resource="xsd:string"/>
+  </owl:DatatypeProperty>
+
+  <owl:DatatypeProperty rdf:about="s">
+    <rdfs:comment xml:lang="es">Número de búsquedas realizadas.</rdfs:comment>
+    <rdfs:domain rdf:resource="estur:FlightSearch"/>
+    <rdfs:range rdf:resource="xsd:integer"/>
+  </owl:DatatypeProperty>
+
+  <owl:DatatypeProperty rdf:about="estur:selectedFlight">
+    <rdfs:comment xml:lang="es">Vuelo seleccionado (código).</rdfs:comment>
+    <rdfs:domain rdf:resource="estur:FlightSearch"/>
+    <rdfs:range rdf:resource="xsd:string"/>
+  </owl:DatatypeProperty>
+
+  <owl:DatatypeProperty rdf:about="estur:infoProvided">
+    <rdfs:comment xml:lang="es">Nivel de información proporcionada (Full, Partial).</rdfs:comment>
+    <rdfs:domain rdf:resource="estur:Activity"/>
+    <rdfs:range rdf:resource="xsd:string"/>
+  </owl:DatatypeProperty>
+
+  <owl:DatatypeProperty rdf:about="estur:transactionStatus">
+    <rdfs:comment xml:lang="es">Estado de la transacción (Success, Failed, Pending).</rdfs:comment>
+    <rdfs:domain rdf:resource="estur:Payment"/>
+    <rdfs:range rdf:resource="xsd:string"/>
+  </owl:DatatypeProperty>
+
+  <owl:DatatypeProperty rdf:about="estur:confirmationStatus">
+    <rdfs:comment xml:lang="es">Estado de confirmación (Confirmed, Pending).</rdfs:comment>
+    <rdfs:domain rdf:resource="estur:Confirmation"/>
+    <rdfs:range rdf:resource="xsd:string"/>
+  </owl:DatatypeProperty>
+
+  <owl:DatatypeProperty rdf:about="estur:ticketStatus">
+    <rdfs:comment xml:lang="es">Estado del billete (Issued, Pending, Cancelled).</rdfs:comment>
+    <rdfs:domain rdf:resource="estur:TicketRegistration"/>
+    <rdfs:range rdf:resource="xsd:string"/>
+  </owl:DatatypeProperty>
+
+  <owl:DatatypeProperty rdf:about="estur:ticketType">
+    <rdfs:comment xml:lang="es">Tipo de billete (Electronic, Paper).</rdfs:comment>
+    <rdfs:domain rdf:resource="estur:TicketRegistration"/>
+    <rdfs:range rdf:resource="xsd:string"/>
+  </owl:DatatypeProperty>
+
+  <owl:DatatypeProperty rdf:about="estur:registrationStatus">
+    <rdfs:comment xml:lang="es">Estado del registro (Success, Failed).</rdfs:comment>
+    <rdfs:domain rdf:resource="estur:TicketRegistration"/>
+    <rdfs:range rdf:resource="xsd:string"/>
+  </owl:DatatypeProperty>
+
+  <owl:DatatypeProperty rdf:about="estur:userID">
+    <rdfs:comment xml:lang="es">Identificador único del usuario.</rdfs:comment>
+    <rdfs:domain rdf:resource="estur:Actor"/>
+    <rdfs:range rdf:resource="xsd:string"/>
+  </owl:DatatypeProperty>
+
+</rdf:RDF>

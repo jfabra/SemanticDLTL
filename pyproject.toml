@@ -1,0 +1,53 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "semanticdltl"
+dynamic = ["version"]
+description = "Model checker for DLTL (data-aware LTL with freeze operators) over finite traces"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "GPL-3.0-or-later"
+license-files = ["LICENSE"]
+authors = [
+    { name = "Joaquín Ezpeleta" },
+    { name = "Javier Fabra" },
+    { name = "María José Ibáñez" },
+]
+maintainers = [{ name = "SemanticDLTL team", email = "semanticdltl@unizar.es" }]
+keywords = ["model checking", "LTL", "freeze operator", "process mining", "event logs"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Topic :: Scientific/Engineering",
+]
+dependencies = []
+
+[project.optional-dependencies]
+scripts = ["pandas", "rdflib"]
+dev = ["pytest", "ruff"]
+
+[project.scripts]
+dltl-mc = "dltl.cli:main"
+
+[tool.hatch.version]
+path = "src/dltl/__init__.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/dltl"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src", "tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+ignore = ["E741", "E743"]  # short names (O, S, e1...) mirror the logic notation

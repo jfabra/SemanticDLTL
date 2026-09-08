@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.venv/
+.pytest_cache/
+.ruff_cache/
+
+# IDE / notebooks
+.idea/
+.vscode/
+.vcode/
+.ipynb_checkpoints/
+.DS_Store
+
+# Model checker outputs (generated next to the .mod file)
+*.res
+*.norm
+*_trace_lengths.txt
+!tests/golden/*
+

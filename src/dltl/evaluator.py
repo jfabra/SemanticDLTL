@@ -1,0 +1,362 @@
+# -----------------------------------------------------------------------------
+# SemanticDLTL: a DLTL model checker over finite traces
+#
+# Copyright (C) 2024-2026
+#   Joaquín Ezpeleta, Universidad de Zaragoza, Spain
+#   Javier Fabra, Universidad de Zaragoza, Spain
+#   María José Ibáñez, Universidad de La Rioja, Spain
+# Contact: semanticdltl@unizar.es
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+# This file is part of SemanticDLTL. It is free software: you can redistribute
+# it and/or modify it under the terms of the GNU General Public License as
+# published by the Free Software Foundation, either version 3 of the License,
+# or (at your option) any later version. See the LICENSE file for details.
+#
+# Based on: J. M. Couvreur, J. Ezpeleta, "A Linear Temporal Logic Model
+# Checking Method over Finite Words with Correlated Transition Attributes",
+# SIMPDA 2017, LNBIP vol. 340, Springer, 2019.
+# -----------------------------------------------------------------------------
+"""
+Evaluation of DLTL formulas over a finite trace.
+
+The evaluation is bottom-up and per trace: ``Evaluator.eval_formula`` returns a
+list with one (partially evaluated) node per event, the node at position ``i``
+being the value of the formula at event ``i``. When a formula contains no free
+freeze variables that node is simply ``TRUE()`` or ``FALSE()``.
+
+Model checker based on the DLTL logic and algorithm in:
+    J. M. Couvreur, J. Ezpeleta, "A Linear Temporal Logic Model Checking
+    Method over Finite Words with Correlated Transition Attributes",
+    SIMPDA 2017, LNBIP vol. 340, Springer, 2019.
+"""
+from __future__ import annotations
+
+import re
+import sys
+import traceback
+from types import ModuleType
+from typing import Any
+
+from dltl.formula import AND, FALSE, NOT, OR, TRUE, e1, e2, is_false, is_true, t, v
+
+# Name under which the current trace is visible inside data expressions after
+# the freeze variables have been substituted ("x[V]" -> "THE_TRACE[3][V]").
+TRACE_NAME = 'THE_TRACE'
+
+
+class Evaluator:
+    """Evaluates formulas over traces of a given model.
+
+    ``column_index`` maps attribute names to positions in the event tuple (see
+    :class:`dltl.log.Log`), and ``props`` is the module exposed as ``PROP``
+    inside data expressions. Both, together with the current trace, form the
+    namespace in which data expressions are ``eval``'d.
+    """
+
+    def __init__(self, column_index: dict[str, int], props: ModuleType | None = None):
+        if props is None:
+            from dltl import propositions as props
+        self._ns: dict[str, Any] = {**column_index,
+                                    'COL': dict(column_index),
+                                    'PROP': props,
+                                    TRACE_NAME: ()}
+        self._cases = {
+            'X': self.eval_X, 'U': self.eval_U, 'F': self.eval_F, 'G': self.eval_G,
+            'Y': self.eval_Y, 'S': self.eval_S, 'O': self.eval_O, 'H': self.eval_H,
+            'True': self.eval_True_False, 'False': self.eval_True_False,
+            '!': self.eval_Not, '&': self.eval_AND, '|': self.eval_OR,
+            'fvar': self.eval_fvar, 'exp': self.eval_exp, 'atom': self.eval_atom,
+        }
+
+    # ------------------------------------------------------------------
+    def eval_formula(self, exp, trace) -> list:
+        """Evaluate ``exp`` at every event of ``trace``; one node per event."""
+        self._ns[TRACE_NAME] = trace
+        try:
+            return self._cases[exp[t]](exp, trace)
+        except Exception as e:  # noqa: BLE001 - report and keep the session alive
+            print(f"An error occurred: {e}", file=sys.stderr)
+            print("\n--- Full Traceback ---", file=sys.stderr)
+            traceback.print_exc(file=sys.stderr)
+            print("returning FALSE value\n", file=sys.stderr)
+            print("----------------------\n", file=sys.stderr)
+            return [FALSE() for _ in trace]
+
+    def _eval_data(self, expression: str):
+        return eval(expression, self._ns)  # noqa: S307 - data expressions are user code by design
+
+    # ------------------------------------------------------------------
+    def replace(self, traza, i, exp, var):
+        """Substitute freeze variable ``var`` by event ``i`` in ``exp``.
+
+        ``var[#]`` becomes the (1-based) position of the event and any other
+        occurrence of ``var`` becomes ``THE_TRACE[i]``. Data expressions left
+        without free variables are evaluated on the spot.
+        """
+        stack = [(exp, False)]
+        resultMap = {}
+
+        while stack:
+            theForm, visited = stack.pop()
+
+            if id(theForm) in resultMap:
+                continue
+
+            vars = theForm[0]
+            op = theForm[1]
+
+            if var not in vars or is_false(theForm) or is_true(theForm):
+                resultMap[id(theForm)] = theForm
+                continue
+
+            if visited:  # descendant results are already in resultMap
+                if op in {'atom', '!', 'X', 'G', 'F', 'Y', 'H', 'O'}:
+                    newExp1 = resultMap[id(theForm[2])]
+                    resultMap[id(theForm)] = [vars - {var}, op, newExp1]
+                elif op in {'&', '|', 'U', 'S'}:
+                    newExp1 = resultMap[id(theForm[2])]
+                    newExp2 = resultMap[id(theForm[3])]
+                    resultMap[id(theForm)] = [vars - {var}, op, newExp1, newExp2]
+                elif op == 'fvar':
+                    newExp1 = resultMap[id(theForm[3])]
+                    resultMap[id(theForm)] = [vars - {var}, op, theForm[2], newExp1]
+                elif op == 'exp':
+                    formula = theForm[2]
+                    # first event position is 1, not 0 (historical reasons)
+                    newFormula = formula.replace(f"{var}[#]", str(i + 1))
+                    pattern = rf'\b{re.escape(var)}\b'
+                    newFormula = re.sub(pattern, f"{TRACE_NAME}[{i}]", newFormula)
+                    newVars = vars - {var}
+                    if len(newVars) == 0:
+                        resultMap[id(theForm)] = [newVars, str(self._eval_data(newFormula))]
+                    else:
+                        resultMap[id(theForm)] = [newVars, op, newFormula]
+            else:
+                # postorder: reinsert with visited=True and process descendants
+                stack.append((theForm, True))
+                if op in {'atom', '!', 'X', 'G', 'F', 'Y', 'H', 'O'}:
+                    stack.append((theForm[2], False))
+                elif op in {'&', '|', 'U', 'S'}:
+                    stack.append((theForm[2], False))
+                    stack.append((theForm[3], False))
+                elif op == 'fvar':
+                    stack.append((theForm[3], False))
+
+        return resultMap[id(exp)]
+
+    # ------------------------------------------------------------------
+    def eval_formula_in_event(self, exp, i, traza):
+        """Simplify ``exp`` at event ``i`` as far as its free variables allow."""
+        # (exp, False): children not yet processed
+        # (exp, True): children already resolved and their value stored in resultMap
+        stack = [(exp, False)]
+        resultMap = {}
+
+        while stack:
+            theForm, visited = stack.pop()
+
+            if id(theForm) in resultMap:
+                continue
+
+            vars = theForm[v]
+            op = theForm[t]
+
+            # true or false, or non-evaluable because of the vars
+            if len(vars) != 0 or is_false(theForm) or is_true(theForm):
+                resultMap[id(theForm)] = theForm
+                continue
+
+            if visited:
+                if op == 'exp':
+                    val = theForm[e1]
+                    try:
+                        val_str = str(self._eval_data(str(val)))
+                    except Exception as ex:  # noqa: BLE001
+                        print(f"Eval error in 'exp': {ex}", file=sys.stderr)
+                        val_str = "False"
+                    resultMap[id(theForm)] = [set(), val_str]
+                elif op == 'atom':
+                    # the set of atoms is at position 0 of the event tuple
+                    resultMap[id(theForm)] = TRUE() if theForm[e1] in traza[i][0] else FALSE()
+                elif op == '&':
+                    ev1 = resultMap[id(theForm[e1])]
+                    ev2 = resultMap[id(theForm[e2])]
+                    if is_false(ev1) or is_false(ev2):
+                        resultMap[id(theForm)] = FALSE()
+                    elif is_true(ev1) and is_true(ev2):
+                        resultMap[id(theForm)] = TRUE()
+                    elif is_true(ev1):
+                        resultMap[id(theForm)] = ev2
+                    elif is_true(ev2):
+                        resultMap[id(theForm)] = ev1
+                    else:
+                        resultMap[id(theForm)] = [ev1[0] | ev2[0], '&', ev1, ev2]
+                elif op == '|':
+                    ev1 = resultMap[id(theForm[e1])]
+                    ev2 = resultMap[id(theForm[e2])]
+                    if is_true(ev1) or is_true(ev2):
+                        resultMap[id(theForm)] = TRUE()
+                    elif is_false(ev1):
+                        resultMap[id(theForm)] = ev2
+                    elif is_false(ev2):
+                        resultMap[id(theForm)] = ev1
+                    else:
+                        resultMap[id(theForm)] = [ev1[0] | ev2[0], '|', ev1, ev2]
+                elif op == '!':
+                    ev = resultMap[id(theForm[e1])]
+                    if len(ev[0]) == 0:
+                        resultMap[id(theForm)] = FALSE() if ev[1] == 'True' else TRUE()
+                    else:
+                        resultMap[id(theForm)] = [ev[0], '!', ev]
+                elif op == 'fvar':
+                    new_exp = self.replace(traza, i, theForm[e2], theForm[e1])
+                    stack.append((new_exp, False))
+                    stack.append((theForm, True))  # cannot be resolved yet
+            else:
+                stack.append((theForm, True))
+                # preorder: descendants first
+                if op in {'&', '|'}:
+                    stack.append((theForm[e2], False))
+                    stack.append((theForm[e1], False))
+                elif op == '!':
+                    stack.append((theForm[e1], False))
+                # 'fvar' is handled in the post-processing step; 'atom'/'exp' have no children
+
+        return resultMap[id(exp)]
+
+    # ------------------------------------------------------------------
+    # future operators
+    def eval_X(self, exp, traza):
+        n = len(traza)
+        res = [None] * n
+        # "X false" is the idiom for "last event": it holds only there
+        res[n - 1] = TRUE() if is_false(exp[e1]) else FALSE()
+        eval_exp = self.eval_formula(exp[e1], traza)
+        for i in reversed(range(n - 1)):
+            res[i] = eval_exp[i + 1]
+        return res
+
+    def eval_U(self, exp, traza):
+        n = len(traza)
+        res = [None] * n
+        res_f = self.eval_formula(exp[e1], traza)
+        res_g = self.eval_formula(exp[e2], traza)
+        res[n - 1] = res_g[n - 1]
+        for i in reversed(range(n - 1)):
+            res[i] = self.eval_formula_in_event(
+                OR(res_g[i], AND(res_f[i], res[i + 1])), i, traza)
+        return res
+
+    def eval_F(self, exp, traza):
+        n = len(traza)
+        res = [None] * n
+        res_parcial = self.eval_formula(exp[e1], traza)
+        res[n - 1] = self.eval_formula_in_event(res_parcial[n - 1], n - 1, traza)
+        for i in reversed(range(n - 1)):
+            res[i] = self.eval_formula_in_event(OR(res_parcial[i], res[i + 1]), i, traza)
+        return res
+
+    def eval_G(self, exp, traza):
+        n = len(traza)
+        res = [None] * n
+        res_parcial = self.eval_formula(exp[e1], traza)
+        res[n - 1] = self.eval_formula_in_event(res_parcial[n - 1], n - 1, traza)
+        for i in reversed(range(n - 1)):
+            res[i] = self.eval_formula_in_event(AND(res_parcial[i], res[i + 1]), i, traza)
+        return res
+
+    # past operators
+    def eval_Y(self, exp, traza):
+        n = len(traza)
+        res = [None] * n
+        # "Y false" is the idiom for "first event": it holds only there
+        res[0] = TRUE() if is_false(exp[e1]) else FALSE()
+        res_exp = self.eval_formula(exp[e1], traza)
+        for i in range(1, n):
+            res[i] = res_exp[i - 1]
+        return res
+
+    def eval_S(self, exp, traza):
+        n = len(traza)
+        res = [None] * n
+        res_f = self.eval_formula(exp[e1], traza)
+        res_g = self.eval_formula(exp[e2], traza)
+        res[0] = res_g[0]
+        for i in range(1, n):
+            res[i] = self.eval_formula_in_event(
+                OR(res_g[i], AND(res_f[i], res[i - 1])), i, traza)
+        return res
+
+    def eval_O(self, exp, traza):
+        n = len(traza)
+        res = [None] * n
+        res_f = self.eval_formula(exp[e1], traza)
+        res[0] = self.eval_formula_in_event(res_f[0], 0, traza)
+        for i in range(1, n):
+            res[i] = self.eval_formula_in_event(OR(res_f[i], res[i - 1]), i, traza)
+        return res
+
+    def eval_H(self, exp, traza):
+        n = len(traza)
+        res = [None] * n
+        res_f = self.eval_formula(exp[e1], traza)
+        res[0] = self.eval_formula_in_event(res_f[0], 0, traza)
+        for i in range(1, n):
+            res[i] = self.eval_formula_in_event(AND(res_f[i], res[i - 1]), i, traza)
+        return res
+
+    # propositional operators and leaves
+    def eval_True_False(self, exp, traza):
+        return [[set(), exp[t]] for _ in traza]
+
+    def eval_Not(self, exp, traza):
+        res_f = self.eval_formula(exp[e1], traza)
+        return [self.eval_formula_in_event(NOT(res_f[i]), i, traza) for i in range(len(traza))]
+
+    def eval_AND(self, exp, traza):
+        res_f1 = self.eval_formula(exp[e1], traza)
+        res_f2 = self.eval_formula(exp[e2], traza)
+        return [self.eval_formula_in_event(
+                    [res_f1[i][0] | res_f2[i][0], '&', res_f1[i], res_f2[i]], i, traza)
+                for i in range(len(traza))]
+
+    def eval_OR(self, exp, traza):
+        res_f1 = self.eval_formula(exp[e1], traza)
+        res_f2 = self.eval_formula(exp[e2], traza)
+        return [self.eval_formula_in_event(
+                    [res_f1[i][0] | res_f2[i][0], '|', res_f1[i], res_f2[i]], i, traza)
+                for i in range(len(traza))]
+
+    def eval_fvar(self, exp, traza):
+        n = len(traza)
+        freezeVar = exp[e1]
+        newRow = self.eval_formula(exp[e2], traza)
+        newRow = [self.replace(newRow, i, newRow[i], freezeVar) for i in range(n)]
+        return [self.eval_formula_in_event(newRow[i], i, traza) for i in range(n)]
+
+    def eval_exp(self, exp, traza):
+        return [self.eval_formula_in_event(exp, i, traza) for i in range(len(traza))]
+
+    def eval_atom(self, exp, traza):
+        return [TRUE() if exp[e1] in event[0] else FALSE() for event in traza]
+
+
+# ---------------------------------------------------------------------------
+
+def results_statistics(res) -> tuple[int, int, int, float]:
+    """Summarise the per-event results of a formula over one trace.
+
+    Returns ``(holds, true_count, false_count, ratio)`` where ``holds`` is 1
+    when the formula is true at the first event (the classic model checking
+    answer) and ``ratio`` is the fraction of events where it is true.
+
+    Raises ``ValueError`` if some event was left with an unresolved node.
+    """
+    n = len(res)
+    trueCount = sum(1 for r in res if is_true(r))
+    falseCount = sum(1 for r in res if is_false(r))
+    if trueCount + falseCount != n:
+        raise ValueError(f"unresolved evaluation: {trueCount + falseCount} != {n}")
+    return (1 if is_true(res[0]) else 0), trueCount, falseCount, trueCount / n
