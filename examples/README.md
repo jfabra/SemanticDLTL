@@ -9,6 +9,7 @@
 | `formulas2.txt` | Two formulas on `sample2` combining nested freezes with `U` and `H` |
 | `extra_props.py` | Propositions to load during a session with `_LOAD` (see below) |
 | `session_macros.txt` | A session showing `_SET`, `_RE` and `_RANGE` macros |
+| `synthea/` | Semantic example: clinical event logs generated from Synthea modules, each with a knowledge graph queried by SPARQL from the propositions (see its README) |
 
 Run the small example non-interactively:
 

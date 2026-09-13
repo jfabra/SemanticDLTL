@@ -29,6 +29,13 @@ to be published) onto the packaged code base.
   were broken in the prototype and are fixed). `suma`, `doble`, `TS_IG` and
   the SPARQL helpers are gone.
 - Second regression fixture `examples/sample2.mod` + `examples/formulas2.txt`.
+- `examples/synthea/`: a semantic example with fourteen clinical event logs
+  generated from Synthea disease modules (50 to 5000 traces), each paired
+  with an RDF knowledge graph in N-Quads (one named graph per event), a
+  propositions module that queries the graph of the frozen event with SPARQL
+  through Oxigraph, the log generator, a store builder and a documented
+  session. Optional dependency `pyoxigraph` (`pip install "semanticdltl[synthea]"`).
+- `Log.load` (and `--log-file`) accept gzipped models (`model.mod.gz`).
 - Nested macros are expanded depth-first, so the generated formulas keep the
   order of the macro values (`?a` = `a,b`, `?b` = `?a,c` gives `a, b, c`;
   the prototype gave `c, a, b`). Macro values are never interpreted as

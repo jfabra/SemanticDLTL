@@ -28,6 +28,7 @@ dependencies = []
 
 [project.optional-dependencies]
 dev = ["pytest", "ruff"]
+synthea = ["pyoxigraph"]  # SPARQL-backed propositions of examples/synthea
 
 [project.scripts]
 dltl-mc = "dltl.cli:main"

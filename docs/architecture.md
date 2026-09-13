@@ -83,7 +83,8 @@ SemanticDLTL/                (repository root)
 │   ├── log.py              Log (model loading, result files)
 │   └── propositions.py     default user propositions (PROP)
 ├── tests/                  pytest suite; tests/golden holds reference outputs
-└── examples/               sample models, init and formula files, extra propositions
+└── examples/               sample models, init and formula files, extra propositions;
+                            examples/synthea: semantic example (logs + RDF graphs + SPARQL propositions)
 ```
 
 The package uses the *src layout*: the code is importable only after
@@ -181,7 +182,7 @@ model:
 
 | Field | Type | Meaning |
 | --- | --- | --- |
-| `path` | `str` | path of the `.mod` file without the suffix; result files are written next to it |
+| `path` | `str` | path of the `.mod` file without the suffix (a gzipped `.mod.gz` is read transparently); result files are written next to it |
 | `traces` | `dict[str, tuple[Event, ...]]` | trace id → events, in file order |
 | `sorted_ids` | `list[str]` | trace ids sorted; every output uses this order |
 | `atomics` | `frozenset[str]` | all atomic propositions of the log |
@@ -490,6 +491,13 @@ If a module defines a `COLUMNS` dictionary, the session fills it with
 attributes by name; `I_POS` and `I_ATOM` from `dltl.log` give the positions
 of the event position and atom set. This is the intended way to add domain
 logic (ontology queries, date arithmetic, …) without touching the checker.
+
+The reference for *semantic* propositions is `examples/synthea/`: the log
+stores, per event, the URI of a named graph in an RDF store (Oxigraph), and
+each proposition receives that URI and runs a SPARQL `ASK` restricted to the
+graph of the event. The checker itself knows nothing about RDF: the store,
+the queries and the optional dependency (`pyoxigraph`) live entirely in the
+propositions module, which is why the package has no dependencies.
 
 **New commands.** Add a method to `Session` and register it in
 `_commands_0` or `_commands_2`; commands never reach the parser, so the

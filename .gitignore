@@ -21,3 +21,5 @@ build/
 *_trace_lengths.csv
 !tests/golden/*
 
+# Oxigraph store of the Synthea example (built locally with build_store.py)
+examples/synthea/store/

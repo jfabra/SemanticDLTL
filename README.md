@@ -5,6 +5,15 @@ temporal logic over finite words, extended with **freeze operators** that bind
 the data attributes of an event to a variable, so that properties can relate
 the attributes of different events of the same trace.
 
+The *semantic* part is what the data attributes can point to: an attribute
+can hold the identifier of an event in a knowledge graph, and propositions
+written in Python can query that graph (with SPARQL, or any other means)
+while the formula is checked. The repository includes a complete example of
+this kind, built on synthetic clinical histories generated with
+[Synthea](https://github.com/synthetichealth/synthea) and annotated with
+SNOMED CT concepts: see [A semantic example](#a-semantic-example-synthea-and-snomed-ct)
+below and [examples/synthea/README.md](examples/synthea/README.md).
+
 It implements the algorithm described in
 
 > J. M. Couvreur, J. Ezpeleta.
@@ -18,8 +27,9 @@ It implements the algorithm described in
 Python 3.10 or later, no dependencies.
 
 ```
-pip install .            # from a checkout of this repository
-pip install -e ".[dev]"  # to run the tests (pytest, ruff)
+pip install .              # from a checkout of this repository
+pip install -e ".[dev]"    # to run the tests (pytest, ruff)
+pip install ".[synthea]"   # to run the semantic example (adds pyoxigraph)
 ```
 
 For development, `make venv` creates a virtual environment in `.venv/` with
@@ -41,7 +51,7 @@ dltl-mc --log-file <model> [--init-file FILE] [--formula-file FILE]
 
 | Option | Description | Default |
 | --- | --- | --- |
-| `--log-file MODEL` | the trace model, with or without the `.mod` suffix | **required** |
+| `--log-file MODEL` | the trace model, with or without the `.mod` suffix; a gzipped `.mod.gz` is accepted | **required** |
 | `--init-file FILE` | commands executed before reading formulas (typically macro definitions) | none |
 | `--formula-file FILE` | file with the formulas/commands to check | standard input |
 | `--interactive` / `--no-interactive` | show the `DLTL -> ` prompt when reading from standard input | interactive |
@@ -162,6 +172,30 @@ python MC.py log-file=examples/sample init-file=examples/sample.init formula-fil
 
 This run is exactly what the regression tests reproduce (see
 [Test suite](#test-suite)).
+
+## A semantic example: Synthea and SNOMED CT
+
+`examples/synthea/` contains fourteen event logs (50 to 5000 traces) that
+simulate patients going through ten Synthea disease modules (asthma,
+allergies, breast and colorectal cancer, COPD, epilepsy, ...). Each event of
+a log has, besides its attributes, its own **named graph** in an RDF
+knowledge graph (N-Quads) describing the clinical state it executes: SNOMED
+CT, LOINC and RxNorm codes with their labels, state type, category, remarks
+and observation ranges. The propositions of the example load the graph into
+an embedded RDF store ([Oxigraph](https://github.com/oxigraph/oxigraph)) and
+ask SPARQL questions inside the graph of the frozen event, so a formula can
+say things like "every allergic disposition is eventually followed by an
+allergy screening test":
+
+```
+G x.("(x)PROP.Allergic_disposition(x[Event])" -> X F y.("(y)PROP.Allergy_screening_test(y[Event])"))
+48,2,96.0,0.08
+```
+
+The example needs the optional dependency `pyoxigraph`
+(`pip install "semanticdltl[synthea]"`). Its README explains the data, the
+propositions, a full session step by step, and how to generate new logs:
+[examples/synthea/README.md](examples/synthea/README.md).
 
 ## Trace model format (`.mod`)
 
@@ -306,6 +340,11 @@ The default module provides, among others, `IN_DIC`, `SAME_KEY_VALUE`,
 between two events) and `has_f_value` (float comparison with tolerance); see
 `src/dltl/propositions.py`.
 
+For propositions that query a knowledge graph with SPARQL, see the Synthea
+example in `examples/synthea/`: each event of the log has its own named graph
+in an RDF store, and the propositions ask questions inside the graph of the
+frozen event.
+
 ## Commands and macros
 
 Lines starting with `_` are commands, lines starting with `;` are comments,
@@ -389,7 +428,8 @@ src/dltl/           the package
   propositions.py     default user propositions (PROP)
   cli.py              command line
 tests/              pytest suite (tests/golden holds the reference output)
-examples/           example models and formulas
+examples/           example models and formulas; examples/synthea is a semantic
+                    example with SPARQL-backed propositions (needs pyoxigraph)
 docs/grammar.md     formal grammar and operator precedence
 docs/architecture.md  technical description of the design and implementation
 ```
