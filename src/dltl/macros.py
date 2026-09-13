@@ -30,14 +30,20 @@ def unfold_macros(formula: str, macroDict: dict[str, tuple[str, ...]]) -> list[s
     Given a formula possibly containing macros such as ``?activities`` and a
     dictionary ``{'?activities': ('load', 'mark', 'unload'), ...}``, returns one
     formula per possible value. When several macros are involved, the
-    Cartesian product of all of them is generated.
+    Cartesian product of all of them is generated. A value may itself contain
+    macros; the expansion is depth-first, so the resulting formulas keep the
+    order in which the values were written (``?a`` = ``a,b`` and ``?b`` =
+    ``?a,c`` give ``a, b, c``).
+
+    Macros are purely textual and are only expanded in formulas: a value that
+    spells a command (``_SET ?bye _AGUR``) is checked as a formula, not run.
     """
-    queue = [formula]
+    stack = [formula]
     finalFormulas = []
     iterations = 0
 
-    while queue and iterations < MAX_ITERATIONS:
-        currentString = queue.pop(0)
+    while stack and iterations < MAX_ITERATIONS:
+        currentString = stack.pop()
         iterations += 1
 
         foundKeys = [key for key in macroDict if key in currentString]
@@ -45,10 +51,11 @@ def unfold_macros(formula: str, macroDict: dict[str, tuple[str, ...]]) -> list[s
         if not foundKeys:
             finalFormulas.append(currentString)
         else:
-            # replace longer keys first (?ac before ?a)
+            # replace longer keys first (?ac before ?a); push the values in
+            # reverse so that the first value is expanded first
             keyToReplace = sorted(foundKeys, key=len, reverse=True)[0]
-            for replacementValue in macroDict[keyToReplace]:
-                queue.append(currentString.replace(keyToReplace, replacementValue))
+            for replacementValue in reversed(macroDict[keyToReplace]):
+                stack.append(currentString.replace(keyToReplace, replacementValue))
 
     if iterations >= MAX_ITERATIONS:
         print(f"Warning: Reached max iterations ({MAX_ITERATIONS}). Possible unbounded expansion.",

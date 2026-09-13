@@ -256,8 +256,8 @@ For one formula typed in a session the sequence of calls is:
 1. `cli.read_lines` yields the line (joining lines up to `$` in multi-line
    mode).
 2. `Session.execute` classifies it: empty or `;` comment (ignored), `@`
-   system call, `_BYE` (end), a command with or without arguments, or a
-   formula.
+   system call, `_AGUR`/`_BYE` (end), a command with or without arguments,
+   or a formula.
 3. `macros.unfold_macros` replaces every `?name` by each of its values,
    producing one formula per combination.
 4. `parser.parse_formula` builds the node tree (or reports a syntax error and
@@ -399,8 +399,8 @@ class Session:
 ```
 
 `execute(line) -> bool` is the single entry point: it dispatches on the
-first word of the line and returns `False` only for `_BYE` (or its aliases
-`_AGUR` and `agur`). A line starting with `@` is handed to the shell through
+first word of the line and returns `False` only for `_AGUR`, `_BYE` or
+`agur`. A line starting with `@` is handed to the shell through
 `subprocess.run`. Commands are methods, registered in two tables according to
 their arity:
 
@@ -409,19 +409,25 @@ their arity:
 | no arguments | `_INFO`, `_WRITE`, `_WRITE_LENGTHS`, `_WHO`, `_WHO_NOT`, `_CLEAR_DATA`, `_CLEAR_CHECKED` |
 | name + arguments | `_SET`, `_RE`, `_RANGE` (macros), `_LOAD` (module) |
 
-`_LOAD name file.py` imports the file with `importlib` under the given name,
-registers it in `sys.modules`, fills its `COLUMNS` dictionary if it has one,
-and calls `Evaluator.add_module`, which adds the module to the evaluation
-namespace so that `name.f(...)` resolves inside data expressions. The session
-remembers the loaded files in `loaded_modules`.
+`_LOAD name file.py` reads the file and executes its source in a fresh
+module object under the given name (it is compiled directly rather than
+imported, so that reloading an edited file always sees its current content
+instead of a cached bytecode), registers it in `sys.modules`, fills its
+`COLUMNS` dictionary if it has one, and calls `Evaluator.add_module`, which
+adds the module to the evaluation namespace so that `name.f(...)` resolves
+inside data expressions. Loading the same name again replaces the module.
+The session remembers the loaded files in `loaded_modules`.
 
 The three macro commands differ only in how the tuple of values is
 obtained: literally from the line, by matching a regular expression against
 `log.atomics`, or from an integer range. Macro expansion itself is textual
 and lives in `macros.py`: the formula string is searched for macro names,
 the longest matching name is expanded first (so that `?ac` is not corrupted
-by `?a`), and the expansion is bounded to 1000 steps to survive cyclic
-definitions.
+by `?a`), the expansion is depth-first so that the generated formulas keep
+the order of the macro values (also when a value contains another macro), and
+it is bounded to 1000 steps to survive cyclic definitions. Because `execute`
+recognises commands before expanding macros, a macro value can never act as
+a command: `_SET ?bye _AGUR` then `?bye` checks the formula `_AGUR`.
 
 Output and error streams are constructor parameters so that the session can
 be driven from tests (or embedded in another program) without touching
@@ -520,7 +526,7 @@ working; the deliberate departures are listed in `CHANGELOG.md`.
 
 ## 11. Testing strategy
 
-The suite (`tests/`, 65 cases) has two layers.
+The suite (`tests/`, 69 cases) has two layers.
 
 *Golden regression.* `tests/golden/` stores the output that the original
 prototype produced for `examples/sample` with its init and formula files.

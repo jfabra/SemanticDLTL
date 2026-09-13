@@ -35,17 +35,20 @@ DLTL formulas::
     _WRITE                      save the results to <log>.res, <log>.norm, <log>.forms
     _WRITE_LENGTHS              save the trace lengths to <log>_trace_lengths.csv
     _CLEAR_DATA                 forget the checked formulas and their results
-    _BYE                        end the session (aliases: _AGUR, agur)
+    _AGUR / _BYE                end the session (also ``agur``)
     @<command>                  run <command> in the operating system shell
+
+Macros are expanded only in formulas: a macro whose value is a command name
+is checked as a formula, since commands are recognised before expansion.
 """
 from __future__ import annotations
 
-import importlib.util
 import re
 import subprocess
 import sys
 import time
 import traceback
+import types
 from collections.abc import Iterable
 from dataclasses import dataclass
 from types import ModuleType
@@ -232,20 +235,23 @@ class Session:
 
         Its functions and variables can then be used in data expressions as
         ``name.<attribute>``, like ``PROP.<attribute>`` for the default module.
+        Loading the same name again replaces the module, so a file can be
+        edited and reloaded in the middle of a session.
         """
         if not name.isidentifier():
             print(f"'{name}' is not a valid module name", file=self.err)
             return
-        spec = importlib.util.spec_from_file_location(name, path)
-        if spec is None or spec.loader is None:
-            print(f"Cannot load '{path}'", file=self.err)
-            return
-        module = importlib.util.module_from_spec(spec)
         try:
-            spec.loader.exec_module(module)
-        except FileNotFoundError:
-            print(f"Error: file '{path}' was not found", file=self.err)
+            with open(path) as f:
+                source = f.read()
+        except OSError as e:
+            print(f"Error: file '{path}' was not found ({e.strerror})", file=self.err)
             return
+        # the source is executed directly (not imported) so that a reload
+        # always sees the current content of the file
+        module = types.ModuleType(name)
+        module.__file__ = path
+        exec(compile(source, path, 'exec'), module.__dict__)  # noqa: S102
         sys.modules[name] = module
         if hasattr(module, 'COLUMNS'):
             module.COLUMNS = dict(self.log.column_index)

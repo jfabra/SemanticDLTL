@@ -112,8 +112,8 @@ Reading the session: some event has `V = 10` in two of the three traces
 (`_WHO` lists them); every event is `a` or `b` except in `id2`, which contains
 `c` and `z` events; only `id0` has exactly two events; the macro `?v` makes the
 last formula be checked twice, once per value. `_WRITE` saves the results next
-to the model (`examples/sample.res`, `.norm`, `.forms`) and `_BYE` ends the
-session (Ctrl-D also does).
+to the model (`examples/sample.res`, `.norm`, `.forms`) and `_BYE` (or
+`_AGUR`) ends the session (Ctrl-D also does).
 
 ### Batch run
 
@@ -278,13 +278,28 @@ def same_actor(x, y):
 F x.(X F y.("(x,y)PROP.same_actor(x, y)"))
 ```
 
-Functions can also be added in the middle of a session with `_LOAD`, which
-makes a Python file available under a name of your choice:
+### Loading propositions during a session
+
+Functions can also be added at any moment of a session, without restarting
+the checker, with `_LOAD name file.py`; the file becomes available under the
+name you choose. `examples/extra_props.py` defines `f(x)` (twice `x`) and
+`has_V(event, value)`:
 
 ```
+DLTL -> F x.("(x)x[V] == 10")
+2,1,66.67,0.0
 DLTL -> _LOAD mp examples/extra_props.py
-DLTL -> F x.("(x)mp.f(x[V]) == 8")
+DLTL -> F x.("(x)mp.f(x[V]) == 20")
+2,1,66.67,0.0
+DLTL -> F x.("(x)mp.has_V(x, 4)")
+2,1,66.67,0.0
 ```
+
+Several files can be loaded under different names, and `_LOAD` can go in an
+init file so that the functions are available from the start. Loading a name
+again replaces the module: edit the file, run `_LOAD` again and the new
+definitions are used by the next formula. If the file declares a `COLUMNS`
+dictionary it is filled with the attribute positions, as for `PROP`.
 
 The default module provides, among others, `IN_DIC`, `SAME_KEY_VALUE`,
 `check_patt` (regular expression on a string attribute), `diff_pos` (distance
@@ -308,7 +323,7 @@ command (`@ls examples`).
 | `_WRITE` | save the results (see below) |
 | `_WRITE_LENGTHS` | save `<model>_trace_lengths.csv` with the length of each trace |
 | `_CLEAR_DATA` (or `_CLEAR_CHECKED`) | forget the checked formulas and their results |
-| `_BYE` | end the session (`_AGUR` and `agur` are accepted as aliases) |
+| `_AGUR` or `_BYE` | end the session (`_AGUR` is the historical name, `agur` is also accepted) |
 
 A formula containing macros is checked once per value; with several macros,
 once per combination:
@@ -318,6 +333,23 @@ _SET ?acts ac_Start, ac_End
 _RANGE ?n 1,3
 F (?acts & X?n ac_Activity)     -> 6 formulas
 ```
+
+A macro value may itself contain macros, and the resulting formulas keep the
+order in which the values were written:
+
+```
+DLTL -> _SET ?a a,b
+DLTL -> _SET ?b ?a,c
+DLTL -> F ?b                     -> F a, F b, F c
+2,1,66.67,0.0
+2,1,66.67,0.0
+1,2,33.33,0.0
+```
+
+Macros are expanded only inside formulas: `_SET` does not accept commands.
+Commands are recognised before macros are expanded, so `_SET ?bye _AGUR`
+followed by `?bye` does not end the session; it checks the formula `_AGUR`
+(an atomic proposition that never holds).
 
 `_WRITE` produces, next to the model:
 
@@ -377,7 +409,7 @@ GPL-3.0-or-later. See [LICENSE](LICENSE) and, to cite this work,
 
 ## Test suite
 
-The `tests/` directory contains a pytest suite of 65 test cases, organised in
+The `tests/` directory contains a pytest suite of 69 test cases, organised in
 eight modules. The tests need `pytest` and `ruff`, which are not part of the
 standard library, so they are run inside a virtual environment created from
 the repository root:
@@ -427,7 +459,7 @@ second, smaller fixture (`examples/sample2.mod` with `examples/formulas2.txt`,
 two formulas combining nested freezes with `U` and `H`) is checked the same
 way. The API module additionally exercises every session command (`_INFO`,
 `_SET`, `_RE`, `_RANGE`, `_LOAD`, `_WHO`, `_WHO_NOT`, `_CLEAR_DATA`,
-`_WRITE_LENGTHS`, `_BYE` and its aliases, `@` system calls) and verifies that
+`_WRITE_LENGTHS`, `_AGUR`/`_BYE`, `@` system calls) and verifies that
 a malformed macro name, a missing file in `_LOAD` or a syntactically
 incorrect formula is reported without terminating the session. The reference
 output was updated deliberately, and only where documented in `CHANGELOG.md`,
@@ -467,10 +499,10 @@ attribute types, of lines with a wrong number of values and of missing files;
 the value casting functions; and the generation of the information text, the
 `_WHO`/`_WHO_NOT` answers and the result files.
 
-**Macro expansion** (`test_macros.py`, 5 cases). Formulas without macros,
-with a single macro, with several macros (Cartesian product), the preference
-for the longest matching macro name, and the bounded expansion of cyclic
-definitions.
+**Macro expansion** (`test_macros.py`, 7 cases). Formulas without macros,
+with a single macro, with several macros (Cartesian product, in order),
+nested macros keeping the order of their values, the preference for the
+longest matching macro name, and the bounded expansion of cyclic definitions.
 
 **Command line** (`test_cli_args.py`, 8 cases). Translation of the legacy
 `key=value` arguments into options, default values, the exit codes returned
