@@ -9,7 +9,6 @@
 | `formulas2.txt` | Two formulas on `sample2` combining nested freezes with `U` and `H` |
 | `extra_props.py` | Propositions to load during a session with `_LOAD` |
 | `session_macros.txt` | A session showing `_SET`, `_RE` and `_RANGE` macros |
-| `semantic/` | Larger, ontology-annotated event logs (see its README) |
 
 Run the small example non-interactively:
 

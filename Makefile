@@ -24,7 +24,7 @@ test: venv
 	$(BIN)/pytest
 
 lint: venv
-	$(BIN)/ruff check src tests scripts
+	$(BIN)/ruff check src tests
 
 check: lint test
 

@@ -83,8 +83,7 @@ SemanticDLTL/                (repository root)
 │   ├── log.py              Log (model loading, result files)
 │   └── propositions.py     default user propositions (PROP)
 ├── tests/                  pytest suite; tests/golden holds reference outputs
-├── examples/               sample model, init and formula files, semantic logs
-└── scripts/                log conversion helpers (need optional dependencies)
+└── examples/               sample models, init and formula files, extra propositions
 ```
 
 The package uses the *src layout*: the code is importable only after
@@ -548,7 +547,7 @@ column numbering and the result writers; `test_macros.py` and
 Fixtures copy the example files into a temporary directory so that result
 files never land in the repository.
 
-`ruff` (rules E, F, I, B, UP) is run on `src`, `tests` and `scripts`; its
+`ruff` (rules E, F, I, B, UP) is run on `src` and `tests`; its
 configuration is in `pyproject.toml`.
 
 ## 12. Known limitations

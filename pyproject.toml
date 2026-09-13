@@ -27,7 +27,6 @@ classifiers = [
 dependencies = []
 
 [project.optional-dependencies]
-scripts = ["pandas", "rdflib"]
 dev = ["pytest", "ruff"]
 
 [project.scripts]
