@@ -35,4 +35,4 @@ sample: venv
 clean:
 	rm -rf .pytest_cache .ruff_cache build dist src/*.egg-info
 	find . -name __pycache__ -type d -prune -exec rm -rf {} +
-	rm -f examples/*.res examples/*.norm examples/*.forms examples/*_trace_lengths.txt
+	rm -f examples/*.res examples/*.norm examples/*.forms examples/*_trace_lengths.csv

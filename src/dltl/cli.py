@@ -34,6 +34,7 @@ import argparse
 import importlib.util
 import re
 import sys
+import time
 from collections.abc import Iterator
 from types import ModuleType
 from typing import TextIO
@@ -156,12 +157,16 @@ def main(argv: list[str] | None = None) -> int:
 
     try:
         props = load_propositions(args.propositions)
+        start = time.time()
         log = Log.load(args.log_file)
+        loading_time = time.time() - start
     except (OSError, ValueError, ImportError) as e:
         print(f"Error: {e}", file=sys.stderr)
         return 1
 
     session = Session(log, props)
+    if args.interactive:
+        print(f"Loading time: {loading_time:.4f} seconds")
     print(log.info())
 
     if args.init_file and not session.run(read_file(args.init_file)):

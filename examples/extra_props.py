@@ -18,22 +18,25 @@
 # Checking Method over Finite Words with Correlated Transition Attributes",
 # SIMPDA 2017, LNBIP vol. 340, Springer, 2019.
 # -----------------------------------------------------------------------------
-"""SemanticDLTL: a model checker for DLTL (data-aware LTL with freeze operators) over finite traces.
+"""Extra propositions loaded during a session with the ``_LOAD`` command.
 
-Typical use as a library::
+    DLTL -> _LOAD mp examples/extra_props.py
+    DLTL -> F x.("(x)mp.f(x[V]) == mp.C * 8")
 
-    from dltl import Log, Session
-
-    session = Session(Log.load("examples/sample"))
-    session.check_formula('F x.(b & "(x)x[V] == 10")')
-    session.execute("_WRITE")
+``COLUMNS`` is filled in by the session with the attribute positions of the
+loaded model, as in the default propositions module.
 """
-__version__ = "1.1.0"
 
-from dltl.evaluator import Evaluator, results_statistics  # noqa: E402
-from dltl.log import I_ATOM, I_POS, Log  # noqa: E402
-from dltl.parser import parse_formula  # noqa: E402
-from dltl.session import CheckSummary, Session  # noqa: E402
+COLUMNS: dict[str, int] = {}
 
-__all__ = ["I_ATOM", "I_POS", "CheckSummary", "Evaluator", "Log", "Session", "parse_formula",
-           "results_statistics", "__version__"]
+C = 1
+
+
+def f(x):
+    """Twice ``x``."""
+    return 2 * x
+
+
+def has_V(event, value):
+    """The event has attribute ``V`` equal to ``value``."""
+    return event[COLUMNS['V']] == value

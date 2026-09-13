@@ -16,7 +16,7 @@ F x?r
 
 _RANGE ?r 1,10,2
 F x?r
-agur
+_BYE
 
 
 

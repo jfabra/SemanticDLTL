@@ -22,7 +22,7 @@
 import io
 from pathlib import Path
 
-from conftest import golden, result_lines
+from conftest import EXAMPLES, golden, result_lines
 from dltl import Log, Session
 from dltl.cli import read_file
 
@@ -35,6 +35,13 @@ def test_session_matches_golden(sample_dir: Path):
     assert result_lines(out.getvalue()) == golden("sample.stdout").split()
     for suffix in (".res", ".norm", ".forms"):
         assert (sample_dir / f"sample{suffix}").read_text() == golden(f"sample{suffix}")
+
+
+def test_sample2_matches_golden(sample_dir: Path):
+    out = io.StringIO()
+    session = Session(Log.load(sample_dir / "sample2"), out=out)
+    assert session.run(read_file(sample_dir / "formulas2.txt"))
+    assert result_lines(out.getvalue()) == golden("sample2.stdout").split()
 
 
 def test_commands(sample_dir: Path, capsys):
@@ -57,8 +64,39 @@ def test_commands(sample_dir: Path, capsys):
     session.execute("_CLEAR_DATA")
     assert session.checked_forms == [] and session.results["id0"] == "id0"
     session.execute("_WRITE_LENGTHS")
-    assert (sample_dir / "sample_trace_lengths.txt").exists()
-    assert session.execute("_AGUR") is False
+    assert (sample_dir / "sample_trace_lengths.csv").read_text() == "id0,2\nid1,8\nid2,7\n"
+    assert session.execute("_BYE") is False
+
+
+def test_bye_aliases(sample_dir: Path):
+    session = Session(Log.load(sample_dir / "sample"), out=io.StringIO())
+    for word in ("_BYE", "_AGUR", "agur"):
+        assert session.execute(word) is False
+    assert session.execute("_bye") is True  # not a command: parsed as a formula, fails
+
+
+def test_load_command(sample_dir: Path, capsys):
+    out = io.StringIO()
+    session = Session(Log.load(sample_dir / "sample"), out=out)
+    session.execute(f"_LOAD mp {EXAMPLES / 'extra_props.py'}")
+    assert "mp" in session.loaded_modules
+    summaries = session.check_formula('F x.("(x)mp.f(x[V]) == mp.C * 8")')
+    assert (summaries[0].yes, summaries[0].no) == (2, 1)
+    summaries = session.check_formula('F x.("(x)mp.has_V(x, 10)")')
+    assert (summaries[0].yes, summaries[0].no) == (2, 1)
+    # errors are reported and the session goes on
+    session.execute("_LOAD mp2 missing_file.py")
+    session.execute("_LOAD not-a-name " + str(EXAMPLES / 'extra_props.py'))
+    err = capsys.readouterr().err
+    assert "not found" in err and "not a valid module name" in err
+    assert session.execute("a") is True
+
+
+def test_system_call(sample_dir: Path, capfd):
+    session = Session(Log.load(sample_dir / "sample"), out=io.StringIO())
+    assert session.execute("@echo SYSTEM CALL OK") is True
+    assert "SYSTEM CALL OK" in capfd.readouterr().out
+    assert session.system_call("exit 3") == 3
 
 
 def test_bad_macro_name_and_bad_formula_do_not_break_the_session(sample_dir: Path, capsys):

@@ -146,20 +146,23 @@ column index became an attribute of `Log` handed explicitly to `Evaluator`
 
 ### 4.1 Events, traces and the `Log`
 
-An event is a tuple. Position 0 holds the **set of atomic propositions** of
-the event; positions 1, 2, … hold the values of the non-atomic attributes in
-header order. For the header `aE,nV,@att,$p` and the line
-`id0,a&4&a;1&a=1;b=2` the event is
+An event is a tuple. Position `I_POS` (0) holds the **position of the event
+in its trace**, starting at 1; position `I_ATOM` (1) holds the **set of atomic
+propositions** of the event; positions 2, 3, … hold the values of the
+non-atomic attributes in header order. For the header `aE,nV,@att,$p` and the
+line `id0,a&4&a;1&a=1;b=2` (first event of its trace) the event is
 
 ```python
-({'a'}, 4.0, {'a', '1'}, {'a': 1.0, 'b': 2.0})
-#  E      V     att          p
+(1, {'a'}, 4.0, {'a', '1'}, {'a': 1.0, 'b': 2.0})
+# pos  E     V     att          p
 ```
 
 Values are cast when loading (`log.cast_format` for `n`/`b`/`s` columns,
-`log.cast` for the values inside `$` dictionaries). Atomic columns do not
-occupy a position: several `a` columns all contribute to the set at
-position 0.
+`log.cast` for the values inside `$` dictionaries; a non-numeric value in a
+numeric column is reported and stored as `0.0`). Atomic columns do not occupy
+a position: several `a` columns all contribute to the set at `I_ATOM`. The
+position stored at `I_POS` is what `x[#]` denotes in data expressions
+(`replace` substitutes `x[#]` textually, so both forms give the same value).
 
 A trace is a tuple of events, and `Log` (a frozen dataclass) is the loaded
 model:
@@ -170,12 +173,12 @@ model:
 | `traces` | `dict[str, tuple[Event, ...]]` | trace id → events, in file order |
 | `sorted_ids` | `list[str]` | trace ids sorted; every output uses this order |
 | `atomics` | `frozenset[str]` | all atomic propositions of the log |
-| `column_index` | `dict[str, int]` | non-atomic attribute name → position in the event tuple |
+| `column_index` | `dict[str, int]` | non-atomic attribute name → position in the event tuple (from 2 on) |
 | `attrib_desc`, `formats`, `field_names` | header information | e.g. `['aE','nV','@att','$p']`, `('a','n','@','$')`, `('E','V','att','p')` |
 
 `n_traces`, `n_events` and `trace_lengths` are derived properties.
 `column_index` is the bridge between attribute names used in formulas and
-positions in the tuples: for the header above it is `{'V': 1, 'att': 2, 'p': 3}`.
+positions in the tuples: for the header above it is `{'V': 2, 'att': 3, 'p': 4}`.
 
 ### 4.2 Formulas
 
@@ -252,8 +255,9 @@ For one formula typed in a session the sequence of calls is:
 
 1. `cli.read_lines` yields the line (joining lines up to `$` in multi-line
    mode).
-2. `Session.execute` classifies it: empty or `;` comment (ignored), `_AGUR`
-   (end), a command with or without arguments, or a formula.
+2. `Session.execute` classifies it: empty or `;` comment (ignored), `@`
+   system call, `_BYE` (end), a command with or without arguments, or a
+   formula.
 3. `macros.unfold_macros` replaces every `?name` by each of its values,
    producing one formula per combination.
 4. `parser.parse_formula` builds the node tree (or reports a syntax error and
@@ -289,6 +293,13 @@ the standard fixed-point characterisations:
 The special cases of `X false` and `Y false` are what make these formulas the
 idioms for "this is the last event" and "this is the first event"; they are
 deliberate and documented in the README.
+
+`F`, `G`, `O` and `H` short-circuit: once `F f` is `TRUE` at event `i+1` it is
+`TRUE` at every earlier event, so the loop stops calling
+`eval_formula_in_event` and fills the rest with constants (symmetrically
+`FALSE` for `G`, and forwards for `O` and `H`). The result is identical, since
+`f[i] ∨ TRUE` is `TRUE` whatever `f[i]` is, but on long traces it avoids most
+of the work.
 
 The propositional operators combine the two lists position-wise. Each
 combination is not built naively but passed through
@@ -344,7 +355,9 @@ and are evaluated with the built-in `eval` in a namespace owned by the
 | --- | --- |
 | every attribute name | its position in the event tuple, so that `x[V]` indexes the tuple |
 | `COL` | the same mapping as a dictionary |
+| `I_POS`, `I_ATOM` | positions of the event position and of the atom set inside the tuple |
 | `PROP` | the propositions module |
+| any name given to `_LOAD` | the module loaded by that command (`Evaluator.add_module`) |
 | `THE_TRACE` | the trace being evaluated (set by `eval_formula` on each call) |
 | Python builtins | added automatically by `eval` |
 
@@ -386,13 +399,21 @@ class Session:
 ```
 
 `execute(line) -> bool` is the single entry point: it dispatches on the
-first word of the line and returns `False` only for `_AGUR`. Commands are
-methods, registered in two tables according to their arity:
+first word of the line and returns `False` only for `_BYE` (or its aliases
+`_AGUR` and `agur`). A line starting with `@` is handed to the shell through
+`subprocess.run`. Commands are methods, registered in two tables according to
+their arity:
 
 | Table | Commands |
 | --- | --- |
 | no arguments | `_INFO`, `_WRITE`, `_WRITE_LENGTHS`, `_WHO`, `_WHO_NOT`, `_CLEAR_DATA`, `_CLEAR_CHECKED` |
-| `?name` + arguments | `_SET`, `_RE`, `_RANGE` |
+| name + arguments | `_SET`, `_RE`, `_RANGE` (macros), `_LOAD` (module) |
+
+`_LOAD name file.py` imports the file with `importlib` under the given name,
+registers it in `sys.modules`, fills its `COLUMNS` dictionary if it has one,
+and calls `Evaluator.add_module`, which adds the module to the evaluation
+namespace so that `name.f(...)` resolves inside data expressions. The session
+remembers the loaded files in `loaded_modules`.
 
 The three macro commands differ only in how the tuple of values is
 obtained: literally from the line, by matching a regular expression against
@@ -436,11 +457,13 @@ same code.
 
 **User propositions.** Any function of the propositions module can be
 called from a data expression as `PROP.name(...)`. A module passed with
-`--propositions` replaces the default one; if it defines a `COLUMNS`
-dictionary, the session fills it with `log.column_index` so that functions
-receiving whole events can read attributes by name. This is the intended way
-to add domain logic (ontology queries, date arithmetic, …) without touching
-the checker.
+`--propositions` replaces the default one, and further modules can be added
+at any point of a session with `_LOAD name file.py` (used as `name.f(...)`).
+If a module defines a `COLUMNS` dictionary, the session fills it with
+`log.column_index` so that functions receiving whole events can read
+attributes by name; `I_POS` and `I_ATOM` from `dltl.log` give the positions
+of the event position and atom set. This is the intended way to add domain
+logic (ontology queries, date arithmetic, …) without touching the checker.
 
 **New commands.** Add a method to `Session` and register it in
 `_commands_0` or `_commands_2`; commands never reach the parser, so the
@@ -497,7 +520,7 @@ working; the deliberate departures are listed in `CHANGELOG.md`.
 
 ## 11. Testing strategy
 
-The suite (`tests/`, 58 cases) has two layers.
+The suite (`tests/`, 65 cases) has two layers.
 
 *Golden regression.* `tests/golden/` stores the output that the original
 prototype produced for `examples/sample` with its init and formula files.
@@ -535,3 +558,7 @@ configuration is in `pyproject.toml`.
   inner formula once per event of the outer one. Long traces with deeply
   nested freezes are slow.
 * Traces are loaded entirely in memory; the loader is not streaming.
+* Traces are evaluated sequentially. Since each trace is independent, the
+  evaluation could be distributed over several processes; the prototype had
+  an experimental parallel entry point (based on `pathos`) that was not
+  functional and has not been ported. Parallel evaluation is future work.
