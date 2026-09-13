@@ -122,11 +122,24 @@ graph TD
     evaluator --> formula
     evaluator -.->|default PROP| propositions
     parser --> formula
+    user[user modules<br>--propositions, _LOAD]:::rt
+    cli -.->|load_propositions| user
+    session -.->|cmd_load| user
+    user -.->|Evaluator.add_module| evaluator
+    classDef rt stroke-dasharray: 5 5
 ```
 
 Dashed arrows are lazy imports of the default propositions module, performed
-inside a function so that a user-supplied module can replace it. The
-following properties hold and are worth preserving:
+inside a function so that a user-supplied module can replace it. The dashed
+node stands for code that is not part of the package at all: Python files
+supplied by the user, loaded at run time either once (`--propositions`, in
+`cli.load_propositions`) or at any point of a session (`_LOAD`, in
+`Session.cmd_load`). They are never imported by name anywhere in the
+package; the session hands the resulting module objects to the evaluator,
+which only stores them in its evaluation namespace (section 6.4). The
+package therefore has no dependency on user code, while user code may import
+`dltl.log` for `I_POS`/`I_ATOM` and declare a `COLUMNS` dictionary that the
+session fills in. The following properties hold and are worth preserving:
 
 * `formula`, `log`, `macros` and `propositions` import nothing from the
   package. They can be tested and reused in isolation.
@@ -243,6 +256,8 @@ flowchart LR
     I[init file<br>formula file<br>stdin] -->|read_lines| E[lines]
     E --> F{Session.execute}
     F -->|"_CMD ..."| G[command method]
+    F -->|"_LOAD name file"| L[cmd_load: exec file<br>Evaluator.add_module]
+    F -->|"@cmd"| Y[shell]
     F -->|formula| H[unfold_macros]
     H --> P[parse_formula]
     P --> V[Evaluator.eval_formula<br>per trace]
@@ -266,6 +281,12 @@ For one formula typed in a session the sequence of calls is:
    (holds at first event, #true, #false, ratio).
 6. The session appends the outcome to the result strings, prints the
    summary line `yes,no,pct,seconds` and returns a `CheckSummary`.
+
+For a `_LOAD name file.py` line the path is shorter: `Session.cmd_load`
+reads and executes the file into a new module object, fills its `COLUMNS`
+if present, and calls `Evaluator.add_module(name, module)`. Nothing else
+changes; the next formula that mentions `name.f(...)` finds the module when
+its data expressions are evaluated (section 6.4).
 
 ## 6. The evaluation algorithm
 
