@@ -31,7 +31,7 @@ HEADER_LINES = (
 
 def python_sources() -> list[Path]:
     files = [REPO_ROOT / "MC.py"]
-    for sub in ("src/dltl", "scripts", "tests"):
+    for sub in ("src/dltl", "tests", "examples"):
         files += sorted((REPO_ROOT / sub).glob("*.py"))
     return files
 

@@ -390,12 +390,11 @@ src/dltl/           the package
   cli.py              command line
 tests/              pytest suite (tests/golden holds the reference output)
 examples/           example models and formulas
-scripts/            conversion helpers (need pip install ".[scripts]")
 docs/grammar.md     formal grammar and operator precedence
 docs/architecture.md  technical description of the design and implementation
 ```
 
-Run the tests with `pytest` and the linter with `ruff check src tests scripts`
+Run the tests with `pytest` and the linter with `ruff check src tests`
 (see [Test suite](#test-suite) below).
 
 ## Authors and license
@@ -419,7 +418,7 @@ python3 -m venv .venv                 # 1. create the environment (once)
 source .venv/bin/activate             # 2. activate it (Windows: .venv\Scripts\activate)
 pip install -e ".[dev]"               # 3. install the package and the dev tools (once)
 pytest                                # 4. run the suite
-ruff check src tests scripts          #    and the linter
+ruff check src tests                  #    and the linter
 ```
 
 Once the environment exists, only steps 2 and 4 are needed in later sessions.
@@ -428,7 +427,7 @@ through their path:
 
 ```
 .venv/bin/pytest
-.venv/bin/ruff check src tests scripts
+.venv/bin/ruff check src tests
 ```
 
 or through the `Makefile`, which creates the environment on first use:

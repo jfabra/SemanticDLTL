@@ -41,6 +41,11 @@ to be published) onto the packaged code base.
   events); one column of the reference `.norm` changed accordingly.
 - Loading time is printed only in interactive mode.
 
+### Removed
+
+- The `scripts/` directory (log conversion helpers) and the semantic event
+  logs of `examples/semantic/`.
+
 ### Not ported
 
 - The prototype's experimental parallel entry point (`MC_multi_proc.py`,
