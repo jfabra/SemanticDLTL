@@ -68,6 +68,26 @@ def test_commands(sample_dir: Path, capsys):
     assert session.execute("_BYE") is False
 
 
+def test_macro_values_are_never_commands(sample_dir: Path):
+    out = io.StringIO()
+    session = Session(Log.load(sample_dir / "sample"), out=out)
+    session.execute("_SET ?bye _AGUR")
+    assert session.execute("?bye") is True          # the session goes on ...
+    assert session.checked_forms == ["_AGUR"]       # ... it was checked as a formula
+    assert out.getvalue().startswith("0,3,")
+
+
+def test_load_reloads_an_edited_file(sample_dir: Path):
+    props = sample_dir / "mine.py"
+    props.write_text("def big(e, cols):\n    return e[cols['V']] > 5\n")
+    session = Session(Log.load(sample_dir / "sample"), out=io.StringIO())
+    session.execute(f"_LOAD mine {props}")
+    assert session.check_formula('F x.("(x)mine.big(x, COL)")')[0].yes == 2
+    props.write_text("def big(e, cols):\n    return e[cols['V']] > 1\n")  # same size
+    session.execute(f"_LOAD mine {props}")
+    assert session.check_formula('F x.("(x)mine.big(x, COL)")')[0].yes == 3
+
+
 def test_bye_aliases(sample_dir: Path):
     session = Session(Log.load(sample_dir / "sample"), out=io.StringIO())
     for word in ("_BYE", "_AGUR", "agur"):

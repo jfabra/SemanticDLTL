@@ -11,8 +11,8 @@ to be published) onto the packaged code base.
   and variables are available in data expressions as `name.<attribute>`.
 - Lines starting with `@` run the rest of the line in the operating-system
   shell.
-- `_BYE` ends the session. `_AGUR` (previous name) and `agur` are still
-  accepted.
+- `_BYE` ends the session, as an alternative to the historical `_AGUR`
+  (`agur` is also accepted).
 - Events now carry their position in the trace: an event is the tuple
   `(position, atoms, attr1, attr2, ...)`, with `I_POS = 0` and `I_ATOM = 1`
   exported by `dltl.log` and available inside data expressions. `x[#]` keeps
@@ -29,6 +29,10 @@ to be published) onto the packaged code base.
   were broken in the prototype and are fixed). `suma`, `doble`, `TS_IG` and
   the SPARQL helpers are gone.
 - Second regression fixture `examples/sample2.mod` + `examples/formulas2.txt`.
+- Nested macros are expanded depth-first, so the generated formulas keep the
+  order of the macro values (`?a` = `a,b`, `?b` = `?a,c` gives `a, b, c`;
+  the prototype gave `c, a, b`). Macro values are never interpreted as
+  commands; this is now documented.
 
 ### Changed
 

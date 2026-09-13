@@ -34,6 +34,18 @@ def test_cartesian_product():
     assert sorted(out) == ["x U 1", "x U 2", "y U 1", "y U 2"]
 
 
+def test_nested_macros_keep_the_order_of_the_values():
+    macros = {"?a": ("a", "b"), "?b": ("?a", "c")}
+    assert unfold_macros("?b", macros) == ["a", "b", "c"]
+    assert unfold_macros("F ?b", {"?a": ("x", "y"), "?b": ("?a", "z", "?a")}) == \
+        ["F x", "F y", "F z", "F x", "F y"]
+
+
+def test_cartesian_product_order():
+    out = unfold_macros("?a U ?b", {"?a": ("x", "y"), "?b": ("1", "2")})
+    assert out == ["x U 1", "x U 2", "y U 1", "y U 2"]
+
+
 def test_longest_key_first():
     out = unfold_macros("F ?ac", {"?a": ("BAD",), "?ac": ("ok",)})
     assert out == ["F ok"]
