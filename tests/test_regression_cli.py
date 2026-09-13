@@ -46,3 +46,12 @@ def test_legacy_invocation_matches_golden(sample_dir: Path):
     assert result_lines(proc.stdout) == golden("sample.stdout").split()
     for suffix in (".res", ".norm", ".forms"):
         assert (sample_dir / f"sample{suffix}").read_text() == golden(f"sample{suffix}")
+
+
+def test_sample2_matches_golden(sample_dir: Path):
+    cmd = [sys.executable, str(MC_PY), "--log-file", str(sample_dir / "sample2.mod"),
+           "--formula-file", str(sample_dir / "formulas2.txt"), "--no-interactive"]
+    proc = subprocess.run(cmd, cwd=sample_dir, capture_output=True, text=True, timeout=60,
+                          check=False)
+    assert proc.returncode == 0, proc.stderr
+    assert result_lines(proc.stdout) == golden("sample2.stdout").split()

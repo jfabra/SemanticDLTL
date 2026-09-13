@@ -1,0 +1,3 @@
+F x.("(x)x[#]>=3") & F x.(c & X F y.(c & "(x,y)y[#]-x[#]>=2 and y[Extra]==x[Extra]") & H z.("(x,z) (z[#]<x[#])" | (c & "(x,z)z[Extra]==x[Extra]")))
+
+F x.((y.(c & "(x,y)y[Extra]==x[Extra]")) U z.(c & "(x,z)z[Extra]==x[Extra]" & "(x,z)z[#]-x[#]>=2"))

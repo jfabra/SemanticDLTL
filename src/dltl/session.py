@@ -23,21 +23,26 @@ A checking session: a loaded model, the macros defined so far, the accumulated
 results of the checked formulas and the commands that operate on them.
 
 Lines given to :meth:`Session.execute` are either commands (starting with
-``_``), comments (starting with ``;``) or DLTL formulas::
+``_``), system calls (starting with ``@``), comments (starting with ``;``) or
+DLTL formulas::
 
     _INFO                       show information about the loaded model
     _SET ?name v1,v2,...        define a macro with the given values
     _RE ?name <regex>           define a macro with the atomics matching the regex
     _RANGE ?name from,to[,step] define a macro with a range of integers
+    _LOAD name file.py          load a Python file, usable in formulas as name.<func>
     _WHO / _WHO_NOT             ids of the traces (not) satisfying the last formula
     _WRITE                      save the results to <log>.res, <log>.norm, <log>.forms
-    _WRITE_LENGTHS              save the trace lengths to <log>_trace_lengths.txt
+    _WRITE_LENGTHS              save the trace lengths to <log>_trace_lengths.csv
     _CLEAR_DATA                 forget the checked formulas and their results
-    _AGUR                       end the session
+    _BYE                        end the session (aliases: _AGUR, agur)
+    @<command>                  run <command> in the operating system shell
 """
 from __future__ import annotations
 
+import importlib.util
 import re
+import subprocess
 import sys
 import time
 import traceback
@@ -52,7 +57,9 @@ from dltl.macros import unfold_macros
 from dltl.parser import parse_formula
 
 COMMENT_PREFIX = ';'
+SYSTEM_PREFIX = '@'
 MACRO_PREFIX = '?'
+BYE_COMMANDS = frozenset({'_BYE', '_AGUR', 'agur'})
 
 
 @dataclass
@@ -84,6 +91,7 @@ class Session:
         self.results: dict[str, str] = {}        # id -> "id,1,0,1,..."
         self.count_results: dict[str, str] = {}  # id -> "id,0.5,0.0,1.0,..."
         self.checked_forms: list[str] = []
+        self.loaded_modules: dict[str, str] = {}  # _LOAD name -> file
         self.cmd_clear_data()
 
         self._commands_0 = {
@@ -99,6 +107,7 @@ class Session:
             '_SET': self.cmd_set,
             '_RE': self.cmd_re,
             '_RANGE': self.cmd_range,
+            '_LOAD': self.cmd_load,
         }
 
     # ------------------------------------------------------------------
@@ -113,13 +122,16 @@ class Session:
         return True
 
     def execute(self, line: str) -> bool:
-        """Execute one command or check one formula. Returns ``False`` on ``_AGUR``."""
+        """Execute one command or check one formula. Returns ``False`` on ``_BYE``."""
         line = line.strip()
         if not line or line.startswith(COMMENT_PREFIX):
             return True
+        if line.startswith(SYSTEM_PREFIX):
+            self.system_call(line[len(SYSTEM_PREFIX):])
+            return True
         command, _, remainder = line.partition(' ')
         try:
-            if command == '_AGUR':
+            if command in BYE_COMMANDS:
                 return False
             if command in self._commands_0:
                 self._commands_0[command]()
@@ -213,3 +225,35 @@ class Session:
             first, last = parts[0], parts[1]
             step = parts[2] if len(parts) > 2 else 1
             self.macros[name] = tuple(str(i) for i in range(first, last + 1, step))
+
+    # loading of user code
+    def cmd_load(self, name: str, path: str) -> None:
+        """``_LOAD name file.py`` : load a Python file as module ``name``.
+
+        Its functions and variables can then be used in data expressions as
+        ``name.<attribute>``, like ``PROP.<attribute>`` for the default module.
+        """
+        if not name.isidentifier():
+            print(f"'{name}' is not a valid module name", file=self.err)
+            return
+        spec = importlib.util.spec_from_file_location(name, path)
+        if spec is None or spec.loader is None:
+            print(f"Cannot load '{path}'", file=self.err)
+            return
+        module = importlib.util.module_from_spec(spec)
+        try:
+            spec.loader.exec_module(module)
+        except FileNotFoundError:
+            print(f"Error: file '{path}' was not found", file=self.err)
+            return
+        sys.modules[name] = module
+        if hasattr(module, 'COLUMNS'):
+            module.COLUMNS = dict(self.log.column_index)
+        self.evaluator.add_module(name, module)
+        self.loaded_modules[name] = path
+
+    # system calls
+    def system_call(self, command: str) -> int:
+        """``@<command>`` : run ``command`` in the shell; returns its exit code."""
+        self.out.flush()
+        return subprocess.run(command, shell=True, check=False).returncode  # noqa: S602

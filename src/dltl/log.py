@@ -35,11 +35,13 @@ The first character of each header field is the attribute type:
     'n'  number (stored as float)  'b'  boolean
     '@'  set of strings ("v1;v2")  '$'  dictionary ("k1=v1;k2=v2")
 
-Each event is stored as a tuple whose position 0 holds the *set* of atomic
-propositions of the event, and whose following positions hold the values of
-the non-atomic attributes, in header order. ``Log.column_index`` maps each
-non-atomic attribute name to its position in that tuple, so that inside a data
-expression ``x[V]`` reads attribute ``V`` of the event frozen in ``x``.
+Each event is stored as a tuple: position ``I_POS`` (0) holds the position of
+the event in its trace (starting at 1), position ``I_ATOM`` (1) holds the *set*
+of atomic propositions of the event, and the following positions hold the
+values of the non-atomic attributes, in header order. ``Log.column_index``
+maps each non-atomic attribute name to its position in that tuple, so that
+inside a data expression ``x[V]`` reads attribute ``V`` of the event frozen
+in ``x``.
 """
 from __future__ import annotations
 
@@ -51,6 +53,11 @@ ID_SEP = ','
 ATRIB_SEP = '&'
 VALS_SEP = ';'
 SUF_MOD = '.mod'
+
+# layout of the event tuple
+I_POS = 0            # position of the event in its trace (1-based)
+I_ATOM = 1           # set of atomic propositions of the event
+FIRST_ATTR_INDEX = 2 # first non-atomic attribute
 
 ATTRIBUTE_TYPES = frozenset({'a', 'n', 'b', 's', '@', '$'})
 
@@ -65,7 +72,13 @@ def cast_format(value_str: str, format: str) -> bool | float | str:
     """Cast ``value_str`` according to the declared attribute type ('n', 'b' or 's')."""
     val = value_str.strip()
     if format == 'n':
-        return 0 if val == '' else float(val)
+        if val == '':
+            return 0
+        try:
+            return float(val)
+        except ValueError:
+            print(f"Warning: '{val}' is not a number, using 0.0", file=sys.stderr)
+            return 0.0
     if format == 'b':
         if val.lower() == 'true':
             return True
@@ -94,8 +107,9 @@ def cast(value_str: str) -> bool | float | str:
 def _parse_header(head: str) -> tuple[list[str], tuple[str, ...], tuple[str, ...], dict[str, int]]:
     """``"aE,nV,@att,$p"`` -> (attrib_desc, formats, field_names, column_index).
 
-    Non-atomic attributes get consecutive positions starting at 1 (position 0
-    of the event tuple is reserved for the set of atomic propositions).
+    Non-atomic attributes get consecutive positions starting at
+    ``FIRST_ATTR_INDEX`` (positions ``I_POS`` and ``I_ATOM`` of the event tuple
+    hold the event position and the set of atomic propositions).
     """
     attrib_desc = head.split(ID_SEP)
     formats = tuple(f[0] for f in attrib_desc)
@@ -106,20 +120,23 @@ def _parse_header(head: str) -> tuple[list[str], tuple[str, ...], tuple[str, ...
     column_index: dict[str, int] = {}
     for fmt, name in zip(formats, field_names, strict=True):
         if fmt != 'a':
-            column_index[name] = len(column_index) + 1
+            column_index[name] = len(column_index) + FIRST_ATTR_INDEX
     return attrib_desc, formats, field_names, column_index
 
 
 def _make_event(formats: tuple[str, ...], field_names: tuple[str, ...], values: list[str],
-                column_index: dict[str, int], line_no: int) -> Event:
-    """Build the event tuple from the raw attribute values of one line."""
+                column_index: dict[str, int], line_no: int, position: int) -> Event:
+    """Build the event tuple from the raw attribute values of one line.
+
+    ``position`` is the 1-based position of the event in its trace.
+    """
     if len(values) != len(formats):
         raise ValueError(f"line {line_no}: expected {len(formats)} attribute values, "
                          f"got {len(values)}")
-    event: list[Any] = [set()] + [None] * len(column_index)
+    event: list[Any] = [position, set()] + [None] * len(column_index)
     for fmt, name, raw in zip(formats, field_names, values, strict=True):
         if fmt == 'a':
-            event[0].add(raw.strip())
+            event[I_ATOM].add(raw.strip())
         elif fmt == '@':
             event[column_index[name]] = {v.strip() for v in raw.split(VALS_SEP)}
         elif fmt == '$':
@@ -167,10 +184,11 @@ class Log:
                 if not line:
                     continue
                 trace_id, _, rest = line.partition(ID_SEP)
+                trace = traces.setdefault(trace_id, [])
                 event = _make_event(formats, field_names, rest.split(ATRIB_SEP),
-                                    column_index, line_no)
-                atomics |= event[0]
-                traces.setdefault(trace_id, []).append(event)
+                                    column_index, line_no, position=len(trace) + 1)
+                atomics |= event[I_ATOM]
+                trace.append(event)
         sorted_ids = sorted(traces)
         return cls(path=root,
                    traces={tid: tuple(traces[tid]) for tid in sorted_ids},
@@ -206,8 +224,8 @@ class Log:
 
     # --- output files ------------------------------------------------------
     def save_trace_lengths(self, path: str | None = None) -> str:
-        """Write ``<id>,<length>`` per trace to ``<path>`` (default ``<log>_trace_lengths.txt``)."""
-        path = path or self.path + '_trace_lengths.txt'
+        """Write ``<id>,<length>`` per trace to ``<path>`` (default ``<log>_trace_lengths.csv``)."""
+        path = path or self.path + '_trace_lengths.csv'
         with open(path, "w") as f:
             for tid in self.sorted_ids:
                 f.write(f"{tid},{len(self.traces[tid])}\n")

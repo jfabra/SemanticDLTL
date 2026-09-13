@@ -24,17 +24,17 @@ from dltl import formula as F_
 from dltl.evaluator import Evaluator, results_statistics
 from dltl.parser import parse_formula
 
-COLUMNS = {"V": 1, "att": 2, "p": 3}
+COLUMNS = {"V": 2, "att": 3, "p": 4}
 
 
-def ev(atoms, V=0.0, att=(), p=None):
-    return (set(atoms), float(V), set(att), dict(p or {}))
+def ev(pos, atoms, V=0.0, att=(), p=None):
+    return (pos, set(atoms), float(V), set(att), dict(p or {}))
 
 
-TRACE = (ev("a", 4, "a", {"a": 1}),
-         ev("a", 1, "a", {"a": 1}),
-         ev("b", 1, "ax", {"a": 2}),
-         ev("ab", 10, "a", {"a": 1}))
+TRACE = (ev(1, "a", 4, "a", {"a": 1}),
+         ev(2, "a", 1, "a", {"a": 1}),
+         ev(3, "b", 1, "ax", {"a": 2}),
+         ev(4, "ab", 10, "a", {"a": 1}))
 
 
 def truth(formula: str, trace=TRACE, props=None) -> list[bool]:
@@ -98,12 +98,34 @@ def test_freeze_with_set_and_dict_attributes():
     # the variable name must not appear inside string literals of the expression
     assert truth('y.("(y)\'x\' in y[att]")') == [False, False, True, False]
     assert truth('x.("(x)x[p][\'a\'] == 2")') == [False, False, True, False]
-    assert truth('x.("(x)COL[\'V\'] == 1 and x[COL[\'V\']] == 4")') == [True, False, False, False]
+    assert truth('x.("(x)COL[\'V\'] == 2 and x[COL[\'V\']] == 4")') == [True, False, False, False]
 
 
 def test_event_position():
     assert truth('x.("(x)x[#] == 3")') == [False, False, True, False]
     assert truth('x.(X y.("(x,y)y[#] == x[#] + 1"))') == [True, True, True, False]
+    # the position is also stored in the event tuple, at index I_POS
+    assert truth('x.("(x)x[I_POS] == x[#]")') == [True] * 4
+    assert truth('x.("(x)\'b\' in x[I_ATOM]")') == [False, False, True, True]
+
+
+def test_short_circuit_keeps_results_with_freeze_inside():
+    # F/G/O/H stop evaluating once the answer is known; results must not change
+    assert truth('F x.("(x)x[V] == 10")') == [True] * 4
+    assert truth('G x.("(x)x[V] < 10")') == [False] * 4
+    assert truth('O x.("(x)x[V] == 4")') == [True] * 4
+    assert truth('H x.("(x)x[V] > 1")') == [True, False, False, False]
+    assert truth('F (b & X x.("(x)x[V] == 10"))') == [True, True, True, False]
+
+
+def test_add_module():
+    mod = types.ModuleType("mp")
+    mod.C = 4
+    mod.twice = lambda n: 2 * n
+    e = Evaluator(COLUMNS)
+    e.add_module("mp", mod)
+    node = parse_formula('x.("(x)mp.twice(x[V]) == 2 * mp.C")')
+    assert [F_.is_true(r) for r in e.eval_formula(node, TRACE)] == [True, False, False, False]
 
 
 def test_two_frozen_events():

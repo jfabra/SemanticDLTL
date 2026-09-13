@@ -18,6 +18,6 @@ build/
 # Model checker outputs (generated next to the .mod file)
 *.res
 *.norm
-*_trace_lengths.txt
+*_trace_lengths.csv
 !tests/golden/*
 

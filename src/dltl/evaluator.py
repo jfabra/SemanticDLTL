@@ -40,10 +40,14 @@ from types import ModuleType
 from typing import Any
 
 from dltl.formula import AND, FALSE, NOT, OR, TRUE, e1, e2, is_false, is_true, t, v
+from dltl.log import I_ATOM, I_POS
 
 # Name under which the current trace is visible inside data expressions after
 # the freeze variables have been substituted ("x[V]" -> "THE_TRACE[3][V]").
 TRACE_NAME = 'THE_TRACE'
+
+_UNARY_OPS = frozenset({'atom', '!', 'X', 'G', 'F', 'Y', 'H', 'O'})
+_BINARY_OPS = frozenset({'&', '|', 'U', 'S'})
 
 
 class Evaluator:
@@ -60,6 +64,8 @@ class Evaluator:
             from dltl import propositions as props
         self._ns: dict[str, Any] = {**column_index,
                                     'COL': dict(column_index),
+                                    'I_POS': I_POS,
+                                    'I_ATOM': I_ATOM,
                                     'PROP': props,
                                     TRACE_NAME: ()}
         self._cases = {
@@ -69,6 +75,10 @@ class Evaluator:
             '!': self.eval_Not, '&': self.eval_AND, '|': self.eval_OR,
             'fvar': self.eval_fvar, 'exp': self.eval_exp, 'atom': self.eval_atom,
         }
+
+    def add_module(self, name: str, module: ModuleType) -> None:
+        """Make ``module`` available as ``name`` inside data expressions (``_LOAD``)."""
+        self._ns[name] = module
 
     # ------------------------------------------------------------------
     def eval_formula(self, exp, trace) -> list:
@@ -95,54 +105,56 @@ class Evaluator:
         occurrence of ``var`` becomes ``THE_TRACE[i]``. Data expressions left
         without free variables are evaluated on the spot.
         """
+        # everything that depends only on (i, var) is computed once per call
+        var_set = frozenset({var})
+        position = str(i + 1)              # first event position is 1, not 0
+        trace_ref = f"{TRACE_NAME}[{i}]"
+        var_hash = f"{var}[#]"
+        pattern = re.compile(rf'\b{re.escape(var)}\b')
+
         stack = [(exp, False)]
         resultMap = {}
 
         while stack:
             theForm, visited = stack.pop()
-
-            if id(theForm) in resultMap:
+            form_id = id(theForm)
+            if form_id in resultMap:
                 continue
 
-            vars = theForm[0]
-            op = theForm[1]
+            vars = theForm[v]
+            op = theForm[t]
 
             if var not in vars or is_false(theForm) or is_true(theForm):
-                resultMap[id(theForm)] = theForm
+                resultMap[form_id] = theForm
                 continue
 
             if visited:  # descendant results are already in resultMap
-                if op in {'atom', '!', 'X', 'G', 'F', 'Y', 'H', 'O'}:
-                    newExp1 = resultMap[id(theForm[2])]
-                    resultMap[id(theForm)] = [vars - {var}, op, newExp1]
-                elif op in {'&', '|', 'U', 'S'}:
-                    newExp1 = resultMap[id(theForm[2])]
-                    newExp2 = resultMap[id(theForm[3])]
-                    resultMap[id(theForm)] = [vars - {var}, op, newExp1, newExp2]
+                new_vars = vars - var_set
+                if op in _UNARY_OPS:
+                    resultMap[form_id] = [new_vars, op, resultMap[id(theForm[e1])]]
+                elif op in _BINARY_OPS:
+                    resultMap[form_id] = [new_vars, op,
+                                          resultMap[id(theForm[e1])],
+                                          resultMap[id(theForm[e2])]]
                 elif op == 'fvar':
-                    newExp1 = resultMap[id(theForm[3])]
-                    resultMap[id(theForm)] = [vars - {var}, op, theForm[2], newExp1]
+                    resultMap[form_id] = [new_vars, op, theForm[e1], resultMap[id(theForm[e2])]]
                 elif op == 'exp':
-                    formula = theForm[2]
-                    # first event position is 1, not 0 (historical reasons)
-                    newFormula = formula.replace(f"{var}[#]", str(i + 1))
-                    pattern = rf'\b{re.escape(var)}\b'
-                    newFormula = re.sub(pattern, f"{TRACE_NAME}[{i}]", newFormula)
-                    newVars = vars - {var}
-                    if len(newVars) == 0:
-                        resultMap[id(theForm)] = [newVars, str(self._eval_data(newFormula))]
+                    newFormula = theForm[e1].replace(var_hash, position)
+                    newFormula = pattern.sub(trace_ref, newFormula)
+                    if not new_vars:
+                        resultMap[form_id] = [new_vars, str(self._eval_data(newFormula))]
                     else:
-                        resultMap[id(theForm)] = [newVars, op, newFormula]
+                        resultMap[form_id] = [new_vars, op, newFormula]
             else:
                 # postorder: reinsert with visited=True and process descendants
                 stack.append((theForm, True))
-                if op in {'atom', '!', 'X', 'G', 'F', 'Y', 'H', 'O'}:
-                    stack.append((theForm[2], False))
-                elif op in {'&', '|', 'U', 'S'}:
-                    stack.append((theForm[2], False))
-                    stack.append((theForm[3], False))
+                if op in _UNARY_OPS:
+                    stack.append((theForm[e1], False))
+                elif op in _BINARY_OPS:
+                    stack.append((theForm[e1], False))
+                    stack.append((theForm[e2], False))
                 elif op == 'fvar':
-                    stack.append((theForm[3], False))
+                    stack.append((theForm[e2], False))
 
         return resultMap[id(exp)]
 
@@ -178,8 +190,7 @@ class Evaluator:
                         val_str = "False"
                     resultMap[id(theForm)] = [set(), val_str]
                 elif op == 'atom':
-                    # the set of atoms is at position 0 of the event tuple
-                    resultMap[id(theForm)] = TRUE() if theForm[e1] in traza[i][0] else FALSE()
+                    resultMap[id(theForm)] = TRUE() if theForm[e1] in traza[i][I_ATOM] else FALSE()
                 elif op == '&':
                     ev1 = resultMap[id(theForm[e1])]
                     ev2 = resultMap[id(theForm[e2])]
@@ -254,8 +265,13 @@ class Evaluator:
         res = [None] * n
         res_parcial = self.eval_formula(exp[e1], traza)
         res[n - 1] = self.eval_formula_in_event(res_parcial[n - 1], n - 1, traza)
+        already_true = is_true(res[n - 1])
         for i in reversed(range(n - 1)):
-            res[i] = self.eval_formula_in_event(OR(res_parcial[i], res[i + 1]), i, traza)
+            if already_true:  # F f holds at i+1, hence at every earlier event
+                res[i] = TRUE()
+            else:
+                res[i] = self.eval_formula_in_event(OR(res_parcial[i], res[i + 1]), i, traza)
+                already_true = is_true(res[i])
         return res
 
     def eval_G(self, exp, traza):
@@ -263,8 +279,13 @@ class Evaluator:
         res = [None] * n
         res_parcial = self.eval_formula(exp[e1], traza)
         res[n - 1] = self.eval_formula_in_event(res_parcial[n - 1], n - 1, traza)
+        already_false = is_false(res[n - 1])
         for i in reversed(range(n - 1)):
-            res[i] = self.eval_formula_in_event(AND(res_parcial[i], res[i + 1]), i, traza)
+            if already_false:  # G f fails at i+1, hence at every earlier event
+                res[i] = FALSE()
+            else:
+                res[i] = self.eval_formula_in_event(AND(res_parcial[i], res[i + 1]), i, traza)
+                already_false = is_false(res[i])
         return res
 
     # past operators
@@ -294,8 +315,13 @@ class Evaluator:
         res = [None] * n
         res_f = self.eval_formula(exp[e1], traza)
         res[0] = self.eval_formula_in_event(res_f[0], 0, traza)
+        already_true = is_true(res[0])
         for i in range(1, n):
-            res[i] = self.eval_formula_in_event(OR(res_f[i], res[i - 1]), i, traza)
+            if already_true:  # O f holds at i-1, hence at every later event
+                res[i] = TRUE()
+            else:
+                res[i] = self.eval_formula_in_event(OR(res_f[i], res[i - 1]), i, traza)
+                already_true = is_true(res[i])
         return res
 
     def eval_H(self, exp, traza):
@@ -303,8 +329,13 @@ class Evaluator:
         res = [None] * n
         res_f = self.eval_formula(exp[e1], traza)
         res[0] = self.eval_formula_in_event(res_f[0], 0, traza)
+        already_false = is_false(res[0])
         for i in range(1, n):
-            res[i] = self.eval_formula_in_event(AND(res_f[i], res[i - 1]), i, traza)
+            if already_false:  # H f fails at i-1, hence at every later event
+                res[i] = FALSE()
+            else:
+                res[i] = self.eval_formula_in_event(AND(res_f[i], res[i - 1]), i, traza)
+                already_false = is_false(res[i])
         return res
 
     # propositional operators and leaves
@@ -340,7 +371,7 @@ class Evaluator:
         return [self.eval_formula_in_event(exp, i, traza) for i in range(len(traza))]
 
     def eval_atom(self, exp, traza):
-        return [TRUE() if exp[e1] in event[0] else FALSE() for event in traza]
+        return [TRUE() if exp[e1] in event[I_ATOM] else FALSE() for event in traza]
 
 
 # ---------------------------------------------------------------------------

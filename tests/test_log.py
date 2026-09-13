@@ -22,7 +22,7 @@ from pathlib import Path
 
 import pytest
 
-from dltl.log import Log, cast, cast_format
+from dltl.log import I_ATOM, I_POS, Log, cast, cast_format
 
 
 def write_mod(tmp_path: Path, text: str, name="m") -> Path:
@@ -36,12 +36,15 @@ def test_load_sample(sample_dir: Path):
     assert log.n_traces == 3
     assert log.n_events == 17
     assert log.sorted_ids == ["id0", "id1", "id2"]
-    assert log.atomics == {"a", "b", "z"}
-    assert log.column_index == {"V": 1, "att": 2, "p": 3}
+    assert log.atomics == {"a", "b", "c", "z"}
+    assert log.column_index == {"V": 2, "att": 3, "p": 4}
     assert log.attrib_desc == ["aE", "nV", "@att", "$p"]
     assert log.trace_lengths == {"id0": 2, "id1": 8, "id2": 7}
     first = log.traces["id0"][0]
-    assert first == ({"a"}, 4.0, {"a", "1"}, {"a": 1.0, "b": 2.0})
+    assert first == (1, {"a"}, 4.0, {"a", "1"}, {"a": 1.0, "b": 2.0})
+    assert first[I_POS] == 1 and first[I_ATOM] == {"a"}
+    # positions restart at 1 in every trace
+    assert [e[I_POS] for e in log.traces["id1"]] == list(range(1, 9))
 
 
 def test_load_accepts_mod_suffix(sample_dir: Path):
@@ -56,27 +59,27 @@ def test_every_attribute_type_and_defaults(tmp_path: Path):
                             "t1,x&3&true&hello&u;v&k=1;s=str;f=false&y\n"
                             "t1,x&&&&&&z\n")
     log = Log.load(p)
-    assert log.column_index == {"N": 1, "B": 2, "S": 3, "Q": 4, "D": 5}
+    assert log.column_index == {"N": 2, "B": 3, "S": 4, "Q": 5, "D": 6}
     e1, e2 = log.traces["t1"]
-    assert e1 == ({"x", "y"}, 3.0, True, "hello", {"u", "v"},
+    assert e1 == (1, {"x", "y"}, 3.0, True, "hello", {"u", "v"},
                   {"k": 1.0, "s": "str", "f": False})
-    assert e2[0] == {"x", "z"}
-    assert e2[1] == 0 and e2[2] is False and e2[3] == ""
-    assert e2[4] == {""} and e2[5] == {}
+    assert e2[I_POS] == 2 and e2[I_ATOM] == {"x", "z"}
+    assert e2[2] == 0 and e2[3] is False and e2[4] == ""
+    assert e2[5] == {""} and e2[6] == {}
 
 
 def test_column_numbering_skips_atomics(tmp_path: Path):
     p = write_mod(tmp_path, "aA,nN1,aB,sS2,nN3\nt,x&1&y&s&2\n")
     log = Log.load(p)
-    assert log.column_index == {"N1": 1, "S2": 2, "N3": 3}
-    assert log.traces["t"][0] == ({"x", "y"}, 1.0, "s", 2.0)
+    assert log.column_index == {"N1": 2, "S2": 3, "N3": 4}
+    assert log.traces["t"][0] == (1, {"x", "y"}, 1.0, "s", 2.0)
 
 
 def test_two_logs_in_one_process_are_independent(tmp_path: Path):
     a = Log.load(write_mod(tmp_path, "aA,nN\nt,x&1\n", "a"))
     b = Log.load(write_mod(tmp_path, "aA,sS,nN\nt,x&s&2\n", "b"))
-    assert a.column_index == {"N": 1}
-    assert b.column_index == {"S": 1, "N": 2}
+    assert a.column_index == {"N": 2}
+    assert b.column_index == {"S": 2, "N": 3}
 
 
 def test_unknown_attribute_type(tmp_path: Path):
@@ -100,8 +103,10 @@ def test_cast():
     assert cast("abc") == "abc"
 
 
-def test_cast_format():
+def test_cast_format(capsys):
     assert cast_format("", "n") == 0 and cast_format("7", "n") == 7.0
+    assert cast_format("abc", "n") == 0.0
+    assert "not a number" in capsys.readouterr().err
     assert cast_format("TRUE", "b") is True and cast_format("", "b") is False
     assert cast_format("maybe", "b") is False
     assert cast_format(" s ", "s") == "s"

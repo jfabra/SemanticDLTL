@@ -15,8 +15,7 @@ _SET ?vals 'a','b'
 F x.(b & "(x) x[p][?vals]>9")
 
 _WRITE
-_AGUR
-
+_BYE
 
 F(a & x.("(x)x[V]==10"))
 F (x.("(x)x[p]['b']==22"))

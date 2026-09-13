@@ -23,24 +23,21 @@ Default user-defined propositions.
 
 This module is available as ``PROP`` inside the data expressions of DLTL
 formulas, e.g. ``x.("(x)PROP.IN_DIC(x[p], 'b', 3)")``. Write your own
-propositions here, or in a separate Python file passed to the command-line
-tool with ``--propositions my_props.py`` (any module attribute can then be
-used as ``PROP.<name>``).
+propositions here, in a separate Python file passed to the command-line tool
+with ``--propositions my_props.py``, or in a file loaded during the session
+with ``_LOAD name my_props.py`` (usable then as ``name.<function>``).
 
 ``COLUMNS`` is filled in by the session when a model is loaded; it maps each
 non-atomic attribute name to its position in the event tuple, so that a
-proposition receiving whole events can read attributes by name.
+proposition receiving whole events can read attributes by name. ``I_POS`` and
+``I_ATOM`` are the positions of the event position and of its set of atomic
+propositions.
 """
+import re
+
+from dltl.log import I_ATOM, I_POS  # noqa: F401  (re-exported for user code)
 
 COLUMNS: dict[str, int] = {}
-
-
-def doble(x):
-    return x * 2
-
-
-def suma(x, y):
-    return x + y
 
 
 def quote(s):
@@ -59,32 +56,48 @@ def IN_DIC_2(event, posDir, k, v):
     return k in event[posDir] and event[posDir][k] == v
 
 
-# x.(F y.("(x,y)PROP.TS_IG(x,y)"))
-def TS_IG(x, y):
-    """Events ``x`` and ``y`` have the same value of attribute ``V``."""
-    V = COLUMNS['V']
-    return x[V] == y[V]
+# x.(F y.("(x,y)PROP.SAME_KEY_VALUE(x[p], y[p], 'b')"))
+def SAME_KEY_VALUE(dic1, dic2, k):
+    """Both dictionaries have key ``k`` with the same value."""
+    return k in dic1 and k in dic2 and dic1[k] == dic2[k]
 
 
-# ---------------------------------------------------------------------------
-# Examples working on rdflib graphs stored as attribute values.
-# F x.(true & "(x)PROP.SP_HAS_VALUE(x[Details_g], 'duration', 'Ongoing')")
-
-def SPARQL_old(g):
-    query = """
-        ASK
-            WHERE {
-               ?s <http://snomed.info/sct/duration> "Ongoing".
-            }
-            """
-    return g.query(query).askAnswer
+# x.("(x)PROP.check_patt(x[name], 'ac_.*')")
+def check_patt(attContent, pattern):
+    """The regular expression ``pattern`` matches somewhere in the string."""
+    return bool(re.search(pattern, attContent))
 
 
-def SP_HAS_VALUE(g, predicado, objeto):
-    query = f"""
-                ASK
-                    WHERE {{
-                       ?s <http://snomed.info/sct/{predicado}> "{objeto}".
-                    }}
-            """
-    return g.query(query).askAnswer
+def check_patt_f(pattern):
+    """Build a case-insensitive matcher for ``pattern``: ``PROP.check_patt_f('x')(s)``."""
+    rx = re.compile(pattern, re.IGNORECASE)
+    return lambda s: bool(rx.search(s))
+
+
+# x.(F y.("(x,y)PROP.diff_att_geq(x[V], y[V], 3)"))
+def diff_att_geq(x, y, value):
+    """``y - x >= value`` for two attribute values."""
+    return y - x >= value
+
+
+# x.(X X y.("(x,y)PROP.diff_pos(x, y, 2)"))
+def diff_pos(x, y, diff):
+    """Event ``y`` is exactly ``diff`` positions after event ``x``."""
+    return y[I_POS] == x[I_POS] + diff
+
+
+# x.("(x)PROP.has_f_value(x, V, 3.0)")
+def has_f_value(x, attrib, value, epsilon=1e-6):
+    """The float attribute at position ``attrib`` of event ``x`` equals ``value``."""
+    return abs(x[attrib] - value) <= epsilon
+
+
+# F x.(id_0 & F y.(id_1 & "(x,y)PROP.near(x, y, 12)"))
+def near(x, y, dist):
+    """Events ``x`` and ``y`` happen at the same time and at most ``dist`` apart.
+
+    Requires numeric attributes ``time`` and ``pos`` in the model.
+    Pre: ``x`` is not later than ``y`` in the trace.
+    """
+    time, pos = COLUMNS['time'], COLUMNS['pos']
+    return y[time] - x[time] <= 1e-6 and abs(y[pos] - x[pos]) <= dist
