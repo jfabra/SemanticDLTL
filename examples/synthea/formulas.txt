@@ -1,0 +1,37 @@
+; SemanticDLTL - Synthea example. Run with:
+;   dltl-mc --log-file examples/synthea/logs/log_50_6_20 --propositions examples/synthea/propositions.py \
+;           --formula-file examples/synthea/formulas.txt --no-interactive
+; (the Oxigraph store must have been built first: python examples/synthea/build_store.py logs/log_50_6_20.nq)
+
+; --- attributes of the .mod only -------------------------------------------
+; an allergy screening test (SNOMED CT 395142003), by the Snomed attribute
+F x.("(x)x[Snomed] == '<http://snomed.info/id/395142003>'")
+; a procedure state, by its action type
+F at_Procedure
+
+; --- the same questions through the knowledge graph ------------------------
+F x.("(x)PROP.has_code(x[Event], 395142003)")
+F x.("(x)PROP.Allergy_screening_test(x[Event])")
+F x.("(x)PROP.has_state_type(x[Event], 'Procedure')")
+
+; --- information that is only in the graph ---------------------------------
+; some clinical code of the event is labelled as a cancer
+F x.("(x)PROP.label_matches(x[Event], 'cancer|carcinoma|neoplasm')")
+; an observation of category laboratory
+F x.("(x)PROP.has_category(x[Event], 'laboratory')")
+
+; --- graph propositions combined with log attributes -----------------------
+; every procedure is performed by a surgeon
+G (x.("(x)PROP.has_state_type(x[Event], 'Procedure')") -> Surgeon)
+; surgeons only perform procedures
+G (Surgeon -> x.("(x)PROP.has_state_type(x[Event], 'Procedure')"))
+
+; --- relating two events ---------------------------------------------------
+; an allergic disposition followed, later, by an allergy screening test
+F x.("(x)PROP.Allergic_disposition(x[Event])" & X F y.("(y)PROP.Allergy_screening_test(y[Event])"))
+; ... within 60 seconds
+F x.("(x)PROP.Allergic_disposition(x[Event])" & X F y.("(y)PROP.Allergy_screening_test(y[Event])" & "(x,y)y[Timestamp] - x[Timestamp] <= 60"))
+; every allergic disposition is eventually followed by a screening test
+G x.("(x)PROP.Allergic_disposition(x[Event])" -> X F y.("(y)PROP.Allergy_screening_test(y[Event])"))
+; a procedure repeated later in the same trace (same clinical code in both graphs)
+F x.(at_Procedure & X F y.(at_Procedure & "(x,y)PROP.same_code(x[Event], y[Event])"))

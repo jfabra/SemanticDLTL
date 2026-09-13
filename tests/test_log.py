@@ -92,6 +92,18 @@ def test_wrong_number_of_values(tmp_path: Path):
         Log.load(write_mod(tmp_path, "aA,nN\nt,x\n"))
 
 
+def test_load_compressed_model(tmp_path: Path, sample_dir: Path):
+    import gzip
+    data = (sample_dir / "sample.mod").read_bytes()
+    with gzip.open(tmp_path / "zipped.mod.gz", "wb") as f:
+        f.write(data)
+    plain = Log.load(sample_dir / "sample")
+    for name in ("zipped.mod.gz", "zipped.mod", "zipped"):
+        log = Log.load(tmp_path / name)
+        assert log.traces == plain.traces and log.column_index == plain.column_index
+        assert log.path == str(tmp_path / "zipped")
+
+
 def test_missing_file(tmp_path: Path):
     with pytest.raises(FileNotFoundError):
         Log.load(tmp_path / "nope")

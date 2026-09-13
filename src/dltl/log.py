@@ -45,14 +45,17 @@ in ``x``.
 """
 from __future__ import annotations
 
+import gzip
 import sys
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
 
 ID_SEP = ','
 ATRIB_SEP = '&'
 VALS_SEP = ';'
 SUF_MOD = '.mod'
+SUF_GZ = '.gz'
 
 # layout of the event tuple
 I_POS = 0            # position of the event in its trace (1-based)
@@ -172,12 +175,23 @@ class Log:
     # --- loading -----------------------------------------------------------
     @classmethod
     def load(cls, path: str) -> Log:
-        """Load ``<path>.mod`` (``path`` may or may not carry the ``.mod`` suffix)."""
+        """Load a model from ``<path>.mod`` or from a compressed ``<path>.mod.gz``.
+
+        ``path`` may be given with or without the suffix. Result files are
+        written next to the model, under ``<path>`` without suffixes.
+        """
         path = str(path)
-        root = path[:-len(SUF_MOD)] if path.endswith(SUF_MOD) else path
+        compressed = path.endswith(SUF_MOD + SUF_GZ)
+        if compressed:
+            root = path[:-len(SUF_MOD + SUF_GZ)]
+        else:
+            root = path[:-len(SUF_MOD)] if path.endswith(SUF_MOD) else path
+            compressed = (not Path(root + SUF_MOD).exists()
+                          and Path(root + SUF_MOD + SUF_GZ).exists())
+        opener = gzip.open if compressed else open
         traces: dict[str, list[Event]] = {}
         atomics: set[str] = set()
-        with open(root + SUF_MOD) as f:
+        with opener(root + SUF_MOD + (SUF_GZ if compressed else ''), 'rt') as f:
             attrib_desc, formats, field_names, column_index = _parse_header(f.readline().strip())
             for line_no, line in enumerate(f, start=2):
                 line = line.strip()

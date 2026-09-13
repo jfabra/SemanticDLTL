@@ -23,3 +23,6 @@ build/
 
 # Claude Code local settings
 .claude/
+
+# Oxigraph store of the Synthea example (built locally with build_store.py)
+examples/synthea/store/
