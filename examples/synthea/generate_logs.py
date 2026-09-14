@@ -22,7 +22,7 @@
 """
 Generate synthetic clinical event logs by simulating Synthea disease modules.
 
-    python generate_logs.py --traces 5 --min-steps 6 --max-steps 20 --seed 1
+    python generate_logs.py --traces 5 --min-steps 6 --max-steps 20 --seed 42
 
 For every module in ``workflows/`` the script walks its state machine
 ``--traces`` times, choosing among the outgoing transitions at random, and
