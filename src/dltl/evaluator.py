@@ -40,7 +40,9 @@ from typing import Any
 
 from dltl.formula import (
     FALSE,
+    FALSE_VAL,
     TRUE,
+    TRUE_VAL,
     e1,
     e2,
     is_false,
@@ -96,6 +98,7 @@ class Evaluator:
                                     'PROP': props,
                                     TRACE_NAME: ()}
         self._code: dict[str, CodeType] = {}  # data expression text -> compiled code
+        self._reported: set[str] = set()      # error messages already printed
         self._cases = {
             'X': self.eval_X, 'U': self.eval_U, 'F': self.eval_F, 'G': self.eval_G,
             'Y': self.eval_Y, 'S': self.eval_S, 'O': self.eval_O, 'H': self.eval_H,
@@ -107,6 +110,12 @@ class Evaluator:
     def add_module(self, name: str, module: ModuleType) -> None:
         """Make ``module`` available as ``name`` inside data expressions (``_LOAD``)."""
         self._ns[name] = module
+
+    def _report_once(self, message: str) -> None:
+        """Print ``message`` to stderr the first time it occurs (it may come once per event)."""
+        if message not in self._reported:
+            self._reported.add(message)
+            print(message, file=sys.stderr)
 
     # ------------------------------------------------------------------
     def eval_formula(self, exp, trace) -> list:
@@ -231,6 +240,10 @@ class Evaluator:
     # ------------------------------------------------------------------
     def eval_formula_in_event(self, exp, i, traza):
         """Simplify ``exp`` at event ``i`` as far as its free variables allow."""
+        # already constant, or not decidable yet because of the free variables:
+        # the common cases, answered before allocating anything
+        if exp is TRUE_VAL or exp is FALSE_VAL or exp[v]:
+            return exp
         # (exp, False): children not yet processed
         # (exp, True): children already resolved and their value stored in resultMap
         stack = [(exp, False)]
@@ -255,7 +268,7 @@ class Evaluator:
                     try:
                         val = self._eval_data(theForm[e1], _bindings(theForm))
                     except Exception as ex:  # noqa: BLE001
-                        print(f"Eval error in 'exp': {ex}", file=sys.stderr)
+                        self._report_once(f"Eval error in 'exp': {ex}")
                         val = False
                     resultMap[id(theForm)] = _constant(val)
                 elif op == 'atom':
@@ -309,13 +322,9 @@ class Evaluator:
     # ------------------------------------------------------------------
     # future operators
     def eval_X(self, exp, traza):
-        n = len(traza)
-        res = [None] * n
+        res = self.eval_formula(exp[e1], traza)[1:]
         # "X false" is the idiom for "last event": it holds only there
-        res[n - 1] = TRUE() if is_false(exp[e1]) else FALSE()
-        eval_exp = self.eval_formula(exp[e1], traza)
-        for i in reversed(range(n - 1)):
-            res[i] = eval_exp[i + 1]
+        res.append(TRUE_VAL if is_false(exp[e1]) else FALSE_VAL)
         return res
 
     def eval_U(self, exp, traza):
@@ -359,13 +368,9 @@ class Evaluator:
 
     # past operators
     def eval_Y(self, exp, traza):
-        n = len(traza)
-        res = [None] * n
         # "Y false" is the idiom for "first event": it holds only there
-        res[0] = TRUE() if is_false(exp[e1]) else FALSE()
-        res_exp = self.eval_formula(exp[e1], traza)
-        for i in range(1, n):
-            res[i] = res_exp[i - 1]
+        res = [TRUE_VAL if is_false(exp[e1]) else FALSE_VAL]
+        res.extend(self.eval_formula(exp[e1], traza)[:-1])
         return res
 
     def eval_S(self, exp, traza):
@@ -409,24 +414,26 @@ class Evaluator:
 
     # propositional operators and leaves
     def eval_True_False(self, exp, traza):
-        return [[set(), exp[t]] for _ in traza]
+        return [TRUE_VAL if exp[t] == 'True' else FALSE_VAL] * len(traza)
 
     def eval_Not(self, exp, traza):
-        res_f = self.eval_formula(exp[e1], traza)
-        return [self.eval_formula_in_event(simp_not(res_f[i]), i, traza)
-                for i in range(len(traza))]
+        settle = self.eval_formula_in_event
+        return [settle(simp_not(r), i, traza)
+                for i, r in enumerate(self.eval_formula(exp[e1], traza))]
 
     def eval_AND(self, exp, traza):
         res_f1 = self.eval_formula(exp[e1], traza)
         res_f2 = self.eval_formula(exp[e2], traza)
-        return [self.eval_formula_in_event(simp_and(res_f1[i], res_f2[i]), i, traza)
-                for i in range(len(traza))]
+        settle = self.eval_formula_in_event
+        return [settle(simp_and(r1, r2), i, traza)
+                for i, (r1, r2) in enumerate(zip(res_f1, res_f2, strict=True))]
 
     def eval_OR(self, exp, traza):
         res_f1 = self.eval_formula(exp[e1], traza)
         res_f2 = self.eval_formula(exp[e2], traza)
-        return [self.eval_formula_in_event(simp_or(res_f1[i], res_f2[i]), i, traza)
-                for i in range(len(traza))]
+        settle = self.eval_formula_in_event
+        return [settle(simp_or(r1, r2), i, traza)
+                for i, (r1, r2) in enumerate(zip(res_f1, res_f2, strict=True))]
 
     def eval_fvar(self, exp, traza):
         freezeVar = exp[e1]
@@ -445,7 +452,8 @@ class Evaluator:
         return [self.eval_formula_in_event(exp, 0, traza)] * len(traza)
 
     def eval_atom(self, exp, traza):
-        return [TRUE() if exp[e1] in event[I_ATOM] else FALSE() for event in traza]
+        atom = exp[e1]
+        return [TRUE_VAL if atom in event[I_ATOM] else FALSE_VAL for event in traza]
 
 
 # ---------------------------------------------------------------------------
@@ -460,8 +468,9 @@ def results_statistics(res) -> tuple[int, int, int, float]:
     Raises ``ValueError`` if some event was left with an unresolved node.
     """
     n = len(res)
-    trueCount = sum(1 for r in res if is_true(r))
-    falseCount = sum(1 for r in res if is_false(r))
+    # list.count compares by identity first: the constants are shared nodes
+    trueCount = res.count(TRUE_VAL)
+    falseCount = res.count(FALSE_VAL)
     if trueCount + falseCount != n:
         raise ValueError(f"unresolved evaluation: {trueCount + falseCount} != {n}")
     return (1 if is_true(res[0]) else 0), trueCount, falseCount, trueCount / n

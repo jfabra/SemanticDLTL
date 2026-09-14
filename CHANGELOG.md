@@ -69,6 +69,16 @@ to be published) onto the packaged code base.
   smaller heap the checks themselves are 1.5 to 3 times faster. The set of
   atoms of an event (`x[I_ATOM]`) and the `@` attributes are now frozensets,
   and attribute values must not be modified by user propositions.
+- The constant nodes `TRUE`/`FALSE` are two shared objects instead of a fresh
+  list per event and sub-formula, the simplification at an event returns at
+  once for constants and for nodes with free variables, `X`/`Y` shift their
+  operand with a slice and the statistics of a trace are one pass. Together
+  with the two previous items, over a 412,000-event trace:
+  `G(a | b | ... )` with 8 atoms 7.5 s to 0.5 s,
+  `F(x.(a & F(y.(b & "..."))))` 4.1 s to 0.6 s, `x.(F(y.("...")))` 9.9 s to 2.1 s,
+  `G(x.("(x)x[Joy] >= 0"))` 5.8 s to 0.7 s.
+- An error raised by a data expression at an event is reported once per
+  distinct message instead of once per event.
 - The trace lengths file is `<model>_trace_lengths.csv` (was `.txt`).
 - `examples/sample.mod` is the prototype's updated model (trace `id2` has `c`
   events); one column of the reference `.norm` changed accordingly.

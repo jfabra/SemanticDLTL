@@ -223,12 +223,12 @@ and `op` identifies the operator. The remaining elements depend on `op`:
 
 | Node | Shape | Built by |
 | --- | --- | --- |
-| constant | `[set(), 'True']`, `[set(), 'False']` | `TRUE()`, `FALSE()` |
+| constant | `[frozenset(), 'True']`, `[frozenset(), 'False']` | `TRUE()`, `FALSE()` — the two shared nodes `TRUE_VAL`, `FALSE_VAL` |
 | atomic proposition | `[set(), 'atom', 'a']` | `atom('a')` |
 | unary operator | `[vars, '!' \| 'X' \| 'Y' \| 'F' \| 'G' \| 'O' \| 'H', exp]` | `NOT`, `X`, `Y`, `F`, `G`, `O`, `H` |
 | binary operator | `[vars, '&' \| '\|' \| 'U' \| 'S', exp1, exp2]` | `AND`, `OR`, `U`, `S` |
 | freeze | `[vars ∪ {z}, 'fvar', 'z', exp]` | `fvar('z', exp)` |
-| data expression | `[{'x','y'}, 'exp', "x[V] == y[V]"]` | `expression({'x','y'}, "...")` |
+| data expression | `[{'x','y'}, 'exp', "x[V] == y[V]"]`; while being evaluated, `[{'y'}, 'exp', "...", {'x': event}]` | `expression({'x','y'}, "...")`; the evaluator adds the bindings (6.3) |
 
 `vars` is computed by the constructors as the union of the children's sets;
 `fvar` *adds* its own variable rather than removing it, because the evaluator
@@ -245,6 +245,14 @@ evaluation a node whose `vars` is empty is always reduced to `TRUE()`/`FALSE()`,
 and a node with a non-empty `vars` is an ordinary formula waiting for its
 variables to be bound. There is thus a single representation for the input of
 the evaluator, its intermediate results and its final results.
+
+Nodes are never modified in place. The two constants are therefore a single
+shared object each (`formula.TRUE_VAL`, `formula.FALSE_VAL`): the evaluator
+produces one node per event and sub-formula, and sharing them is the
+difference between allocating millions of two-element lists per formula and
+allocating none. `is_true`/`is_false` test the identity first and fall back
+to the structural test, which still recognises a `[set(), 'True']` built by
+hand.
 
 Nodes are never mutated: every transformation builds new lists. This allows
 the parser to share one node among all the occurrences of an atomic
@@ -367,6 +375,11 @@ the formula, not by one per event.
   constructors and its constant operands are already folded away);
 * an `fvar` node binds its variable to the current event (6.3) and the
   result is simplified again.
+
+The two common cases — the node is one of the shared constants, or its
+`vars` is not empty — are answered before the traversal allocates its stack
+and map: the handlers of the operators call the function once per event, and
+after the folding of the constructors that is almost always the case.
 
 The function is an explicit post-order traversal with a stack and a
 `resultMap` keyed by `id(node)`, rather than a recursive function, so that

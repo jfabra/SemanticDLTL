@@ -53,24 +53,28 @@ Model checker based on the DLTL logic and algorithm in:
 # Indexes inside a node: var set, operator, first and second sub-expression
 v, t, e1, e2 = 0, 1, 2, 3
 
-TRUE_VAL = [set(), 'True']
-FALSE_VAL = [set(), 'False']
+# The two constant nodes are shared: no node is ever modified in place, so every
+# TRUE()/FALSE() is the same object and the tests below are, first, by identity
+# (the evaluator produces millions of them, one per event and sub-formula).
+NO_VARS: frozenset[str] = frozenset()
+TRUE_VAL = [NO_VARS, 'True']
+FALSE_VAL = [NO_VARS, 'False']
 
 
 def is_false(exp) -> bool:
-    return (len(exp[0]) == 0) and (exp[1] == 'False')
+    return exp is FALSE_VAL or ((len(exp[0]) == 0) and (exp[1] == 'False'))
 
 
 def is_true(exp) -> bool:
-    return (len(exp[0]) == 0) and (exp[1] == 'True')
+    return exp is TRUE_VAL or ((len(exp[0]) == 0) and (exp[1] == 'True'))
 
 
 def TRUE():
-    return TRUE_VAL.copy()
+    return TRUE_VAL
 
 
 def FALSE():
-    return FALSE_VAL.copy()
+    return FALSE_VAL
 
 
 def atom(var):
