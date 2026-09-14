@@ -26,3 +26,6 @@ build/
 
 # Oxigraph store of the Synthea example (built locally with build_store.py)
 examples/synthea/store/
+
+# Architecture diagram generated with archify (kept local)
+docs/archify/

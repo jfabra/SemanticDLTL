@@ -277,7 +277,7 @@ seconds to minutes per formula.
 ## Generating new logs
 
 ```
-python examples/synthea/generate_logs.py --traces 5 --min-steps 6 --max-steps 20 --seed 1
+python examples/synthea/generate_logs.py --traces 5 --min-steps 6 --max-steps 20 --seed 42
 ```
 
 simulates every module of `workflows/` (except those that other modules
