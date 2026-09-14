@@ -31,10 +31,13 @@ freeze variables* of the sub-formula and whose second element is the operator:
     [{...}, 'F', exp]           # likewise 'O', 'X', 'Y', 'G', 'H'
     [{...}, '&', exp1, exp2]    # likewise '|', 'U', 'S'
     [{...}, 'fvar', 'z', exp]   # freeze: z.(exp)
-    [{...}, 'exp', "(x,y)x[t]+y[t] > 3+PROP.f(7)"]
+    [{...}, 'exp', "x[t]+y[t] > 3+PROP.f(7)"]
         The third element is a Python expression evaluated in the context of
         the trace. ``x`` and ``y`` are the freeze variables it depends on and
         ``PROP.f`` is a user-defined proposition (see ``dltl.propositions``).
+        While it is being evaluated the node may carry a fourth element, a
+        dictionary with the events already bound to some of its variables:
+        [{'y'}, 'exp', "x[t]+y[t] > 3", {'x': (3, {'a'}, 1.0)}].
 
 IMPORTANT: only numeric fields can be used in numeric operations. You can
 write ``"(x)x[V] > 1"`` if the attribute ``V`` was declared with type 'n'

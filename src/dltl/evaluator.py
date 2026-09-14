@@ -33,10 +33,9 @@ Model checker based on the DLTL logic and algorithm in:
 """
 from __future__ import annotations
 
-import re
 import sys
 import traceback
-from types import ModuleType
+from types import CodeType, ModuleType
 from typing import Any
 
 from dltl.formula import (
@@ -54,12 +53,28 @@ from dltl.formula import (
 )
 from dltl.log import I_ATOM, I_POS
 
-# Name under which the current trace is visible inside data expressions after
-# the freeze variables have been substituted ("x[V]" -> "THE_TRACE[3][V]").
+# Name under which the current trace is visible inside data expressions.
 TRACE_NAME = 'THE_TRACE'
 
 _UNARY_OPS = frozenset({'atom', '!', 'X', 'G', 'F', 'Y', 'H', 'O'})
 _BINARY_OPS = frozenset({'&', '|', 'U', 'S'})
+
+# bindings of an 'exp' node whose freeze variables are all still free
+_NO_BINDINGS: dict[str, Any] = {}
+
+
+def _bindings(exp) -> dict[str, Any]:
+    """Freeze variable -> event, for the variables already bound in ``exp`` ('exp' node)."""
+    return exp[e2] if len(exp) > e2 else _NO_BINDINGS
+
+
+def _constant(value) -> list:
+    """Node for the value of a data expression: ``TRUE``/``FALSE`` for booleans."""
+    if value is True:
+        return TRUE()
+    if value is False:
+        return FALSE()
+    return [set(), str(value)]
 
 
 class Evaluator:
@@ -80,6 +95,7 @@ class Evaluator:
                                     'I_ATOM': I_ATOM,
                                     'PROP': props,
                                     TRACE_NAME: ()}
+        self._code: dict[str, CodeType] = {}  # data expression text -> compiled code
         self._cases = {
             'X': self.eval_X, 'U': self.eval_U, 'F': self.eval_F, 'G': self.eval_G,
             'Y': self.eval_Y, 'S': self.eval_S, 'O': self.eval_O, 'H': self.eval_H,
@@ -106,23 +122,30 @@ class Evaluator:
             print("----------------------\n", file=sys.stderr)
             return [FALSE() for _ in trace]
 
-    def _eval_data(self, expression: str):
-        return eval(expression, self._ns)  # noqa: S307 - data expressions are user code by design
+    def _eval_data(self, text: str, bindings: dict[str, Any]):
+        """Evaluate the data expression ``text`` with its freeze variables bound to events.
+
+        The text is compiled once (``eval`` on a string would parse it again at
+        every event) and the events are passed as the local namespace, so that
+        ``x`` in the expression is the event frozen in ``x``.
+        """
+        code = self._code.get(text)
+        if code is None:
+            # "x[#]" is the position of the event in the trace, i.e. x[I_POS];
+            # unlike eval(), compile() does not tolerate leading blanks
+            source = text.replace('[#]', '[I_POS]').strip()
+            code = self._code[text] = compile(source, '<exp>', 'eval')
+        return eval(code, self._ns, bindings)  # noqa: S307 - data expressions are user code by design
 
     # ------------------------------------------------------------------
     def replace(self, traza, i, exp, var):
-        """Substitute freeze variable ``var`` by event ``i`` in ``exp``.
+        """Bind freeze variable ``var`` to event ``i`` in ``exp``.
 
-        ``var[#]`` becomes the (1-based) position of the event and any other
-        occurrence of ``var`` becomes ``THE_TRACE[i]``. Data expressions left
-        without free variables are evaluated on the spot.
+        The event is recorded in the bindings of every data expression that
+        mentions ``var``; the expressions left without free variables are
+        evaluated on the spot.
         """
-        # everything that depends only on (i, var) is computed once per call
         var_set = frozenset({var})
-        position = str(i + 1)              # first event position is 1, not 0
-        trace_ref = f"{TRACE_NAME}[{i}]"
-        var_hash = f"{var}[#]"
-        pattern = re.compile(rf'\b{re.escape(var)}\b')
 
         # (form, 0): descendants not processed yet
         # (form, 1): first operand of a '&' / '|' resolved, second one pending
@@ -180,12 +203,11 @@ class Evaluator:
                 elif op == 'fvar':
                     resultMap[form_id] = [new_vars, op, theForm[e1], resultMap[id(theForm[e2])]]
                 elif op == 'exp':
-                    newFormula = theForm[e1].replace(var_hash, position)
-                    newFormula = pattern.sub(trace_ref, newFormula)
+                    bindings = {**_bindings(theForm), var: traza[i]}
                     if not new_vars:
-                        resultMap[form_id] = [new_vars, str(self._eval_data(newFormula))]
+                        resultMap[form_id] = _constant(self._eval_data(theForm[e1], bindings))
                     else:
-                        resultMap[form_id] = [new_vars, op, newFormula]
+                        resultMap[form_id] = [new_vars, op, theForm[e1], bindings]
             else:
                 # postorder: reinsert and process the descendants first
                 if op in ('&', '|'):
@@ -230,13 +252,12 @@ class Evaluator:
 
             if visited:
                 if op == 'exp':
-                    val = theForm[e1]
                     try:
-                        val_str = str(self._eval_data(str(val)))
+                        val = self._eval_data(theForm[e1], _bindings(theForm))
                     except Exception as ex:  # noqa: BLE001
                         print(f"Eval error in 'exp': {ex}", file=sys.stderr)
-                        val_str = "False"
-                    resultMap[id(theForm)] = [set(), val_str]
+                        val = False
+                    resultMap[id(theForm)] = _constant(val)
                 elif op == 'atom':
                     resultMap[id(theForm)] = TRUE() if theForm[e1] in traza[i][I_ATOM] else FALSE()
                 elif op == '&':
@@ -417,7 +438,11 @@ class Evaluator:
                 for i in range(len(traza))]
 
     def eval_exp(self, exp, traza):
-        return [self.eval_formula_in_event(exp, i, traza) for i in range(len(traza))]
+        # a data expression does not depend on the event by itself, only through
+        # its freeze variables: evaluated once (or kept as is, if some is free)
+        if not traza:
+            return []
+        return [self.eval_formula_in_event(exp, 0, traza)] * len(traza)
 
     def eval_atom(self, exp, traza):
         return [TRUE() if exp[e1] in event[I_ATOM] else FALSE() for event in traza]

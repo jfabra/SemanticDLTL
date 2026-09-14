@@ -175,7 +175,7 @@ Values are cast when loading (`log.cast_format` for `n`/`b`/`s` columns,
 numeric column is reported and stored as `0.0`). Atomic columns do not occupy
 a position: several `a` columns all contribute to the set at `I_ATOM`. The
 position stored at `I_POS` is what `x[#]` denotes in data expressions
-(`replace` substitutes `x[#]` textually, so both forms give the same value).
+(`x[#]` is compiled as `x[I_POS]`, so both forms give the same value).
 
 A trace is a tuple of events, and `Log` (a frozen dataclass) is the loaded
 model:
@@ -360,15 +360,15 @@ shared sub-nodes are processed once.
 
 For `z.(f)` the handler first evaluates `f` over the trace, obtaining a list of
 partially evaluated nodes that still mention `z`. Then, for every event `i`,
-`replace(trace, i, node, 'z')` substitutes the event into the node:
+`replace(trace, i, node, 'z')` binds the event in the node:
 
 * the traversal descends only into sub-nodes whose `vars` contains `z`, and
   rebuilds them with `vars − {z}`;
-* in a data expression, `z[#]` is replaced by the textual position `i+1`
-  (positions are 1-based for the user), and every other whole-word `z` by
-  `THE_TRACE[i]`, using the regular expression `\bz\b`;
-* if the expression has no remaining variables it is `eval`'d immediately
-  and becomes a constant; otherwise it is kept, with its rewritten text,
+* in a data expression, the event is added to the *bindings* of the node,
+  the dictionary `{variable: event}` kept as its fourth element (the text of
+  the expression is never rewritten);
+* if the expression has no remaining variables it is evaluated immediately
+  (6.4) and becomes a constant; otherwise it is kept, with its bindings,
   until the next variable is bound;
 * rebuilt `&`, `|` and `!` nodes are folded with the simplifying constructors,
   so a branch that has just become constant collapses instead of being copied;
@@ -388,10 +388,13 @@ are evaluated.
 
 ### 6.4 Evaluating data expressions
 
-Data expressions are Python source. After substitution they look like
-`THE_TRACE[3][V] == THE_TRACE[5][V]` or `PROP.IN_DIC(THE_TRACE[2][p], 'b', 22)`
-and are evaluated with the built-in `eval` in a namespace owned by the
-`Evaluator` instance:
+Data expressions are Python source, such as `x[V] == y[V]` or
+`PROP.IN_DIC(x[p], 'b', 22)`. `Evaluator._eval_data` compiles each distinct
+text once (`x[#]` is rewritten as `x[I_POS]` first; `compile` is the
+expensive half of `eval` on a string, about 10 µs against 0.2 µs for the
+evaluation itself) and evaluates the code object with the bindings of the
+node as local namespace — `x` is the event frozen in `x` — and, as global
+namespace, a dictionary owned by the `Evaluator` instance:
 
 | Name | Value |
 | --- | --- |
@@ -602,9 +605,9 @@ configuration is in `pyproject.toml`.
 
 ## 12. Known limitations
 
-* Substitution of a freeze variable is textual (`\bz\b`), so the variable
-  name must not occur inside string literals of its data expression
-  (`'x' in x[att]` breaks; `'x' in y[att]` is fine).
+* Freeze variables are bound as local names of the data expression, so a
+  variable called like an attribute, or like `COL`, `PROP`, `I_POS` or
+  `I_ATOM`, shadows that name inside its expressions.
 * Data expressions are evaluated with `eval`; formula files must be trusted.
 * Attribute names must be valid Python identifiers that are not reserved by
   the lexer (`U`, `S`, `X`, `Y`, `G`, `H`, `F`, `O`, `true`, `false`).

@@ -53,6 +53,14 @@ to be published) onto the packaged code base.
   match. On a 5.3-million-event log the formula above went from exhausting the
   memory of the machine (`Killed`) to about a minute; a trace of 2000 events
   went from 39 s and 1.9 GB to 0.01 s and 25 MB. Results are unchanged.
+- Data expressions are compiled once and their freeze variables are bound by
+  name (the event frozen in `x` is the local name `x` while the expression is
+  evaluated) instead of being rewritten textually and `eval`'d as a string at
+  every event. A formula with a data expression is 2 to 4 times faster
+  (`G(x.("(x)x[Joy] >= 0"))` over 412,000 events: 5.8 s to 1.4 s), and the
+  name of a freeze variable may now appear inside string literals of its
+  expression (`'x' in x[att]`). A variable must not be called like an
+  attribute or like `COL`, `PROP`, `I_POS`, `I_ATOM`.
 - The trace lengths file is `<model>_trace_lengths.csv` (was `.txt`).
 - `examples/sample.mod` is the prototype's updated model (trace `id2` has `c`
   events); one column of the reference `.norm` changed accordingly.

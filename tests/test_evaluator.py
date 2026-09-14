@@ -95,8 +95,10 @@ def test_freeze_with_numeric_attribute():
 
 
 def test_freeze_with_set_and_dict_attributes():
-    # the variable name must not appear inside string literals of the expression
     assert truth('y.("(y)\'x\' in y[att]")') == [False, False, True, False]
+    # the variable is bound by name, so it may appear inside string literals
+    assert truth('x.("(x)\'x\' in x[att]")') == [False, False, True, False]
+    assert truth('x.("(x)x[att] == {\'a\', \'x\'}")') == [False, False, True, False]
     assert truth('x.("(x)x[p][\'a\'] == 2")') == [False, False, True, False]
     assert truth('x.("(x)COL[\'V\'] == 2 and x[COL[\'V\']] == 4")') == [True, False, False, False]
 

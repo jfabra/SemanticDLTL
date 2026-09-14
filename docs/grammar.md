@@ -69,6 +69,7 @@ them:
 * `COL['<attr>']` is the position of `<attr>` inside the event tuple;
 * `PROP.<name>(...)` calls a user-defined proposition (see `--propositions`).
 
-The expression is evaluated when all its variables have been bound. The name
-of a freeze variable must not appear inside string literals of the expression
-(write `'z' in x[att]`, not `'x' in x[att]`).
+The expression is evaluated when all its variables have been bound; the
+variables are bound by name (a variable may appear inside string literals),
+so a freeze variable must not be called like an attribute or like `COL`,
+`PROP` or `I_POS`.

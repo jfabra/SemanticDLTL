@@ -49,10 +49,10 @@ def check(formula: str, trace) -> tuple[list[bool], int]:
     calls = 0
     inner = evaluator._eval_data
 
-    def counting(expression):
+    def counting(*args):
         nonlocal calls
         calls += 1
-        return inner(expression)
+        return inner(*args)
 
     evaluator._eval_data = counting
     node = parse_formula(formula)

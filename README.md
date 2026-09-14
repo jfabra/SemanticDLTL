@@ -288,8 +288,9 @@ Inside a data expression:
 * any Python expression is allowed (`and`, `or`, `int(...)`, `.get(...)`);
   only numeric attributes can be used in numeric comparisons.
 
-Do not use the name of a freeze variable inside string literals of its
-expression (`'x' in x[att]` would be rewritten; use another variable name).
+Freeze variables are bound by name, so `'x' in x[att]` is fine; a variable
+must not, however, be called like an attribute or like `COL`, `PROP` or
+`I_POS` (its value would shadow them inside the expression).
 
 **Security note.** Data expressions are executed with Python's `eval`, files
 given to `_LOAD` are imported, and `@` lines are run in the shell. A formula
