@@ -39,7 +39,19 @@ import traceback
 from types import ModuleType
 from typing import Any
 
-from dltl.formula import AND, FALSE, NOT, OR, TRUE, e1, e2, is_false, is_true, t, v
+from dltl.formula import (
+    FALSE,
+    TRUE,
+    e1,
+    e2,
+    is_false,
+    is_true,
+    simp_and,
+    simp_not,
+    simp_or,
+    t,
+    v,
+)
 from dltl.log import I_ATOM, I_POS
 
 # Name under which the current trace is visible inside data expressions after
@@ -112,11 +124,14 @@ class Evaluator:
         var_hash = f"{var}[#]"
         pattern = re.compile(rf'\b{re.escape(var)}\b')
 
-        stack = [(exp, False)]
+        # (form, 0): descendants not processed yet
+        # (form, 1): first operand of a '&' / '|' resolved, second one pending
+        # (form, 2): every needed descendant is resolved and stored in resultMap
+        stack = [(exp, 0)]
         resultMap = {}
 
         while stack:
-            theForm, visited = stack.pop()
+            theForm, stage = stack.pop()
             form_id = id(theForm)
             if form_id in resultMap:
                 continue
@@ -128,9 +143,35 @@ class Evaluator:
                 resultMap[form_id] = theForm
                 continue
 
-            if visited:  # descendant results are already in resultMap
+            if stage == 1:
+                # short circuit: the second operand is only substituted (and its
+                # data expressions only evaluated) if the first one leaves the
+                # result open. This is what makes "x.(F(y.(...)))" stop at the
+                # first event that settles the formula instead of rebuilding the
+                # whole suffix for every frozen event.
+                first = resultMap[id(theForm[e1])]
+                settled = is_false(first) if op == '&' else is_true(first)
+                if settled:
+                    resultMap[form_id] = FALSE() if op == '&' else TRUE()
+                else:
+                    stack.append((theForm, 2))
+                    stack.append((theForm[e2], 0))
+                continue
+
+            if stage == 2:  # descendant results are already in resultMap
                 new_vars = vars - var_set
-                if op in _UNARY_OPS:
+                # folding here is what keeps the substituted formula small: as
+                # soon as a data expression becomes True/False its whole branch
+                # usually collapses instead of being rebuilt event by event
+                if op == '&':
+                    resultMap[form_id] = simp_and(resultMap[id(theForm[e1])],
+                                                  resultMap[id(theForm[e2])])
+                elif op == '|':
+                    resultMap[form_id] = simp_or(resultMap[id(theForm[e1])],
+                                                 resultMap[id(theForm[e2])])
+                elif op == '!':
+                    resultMap[form_id] = simp_not(resultMap[id(theForm[e1])])
+                elif op in _UNARY_OPS:
                     resultMap[form_id] = [new_vars, op, resultMap[id(theForm[e1])]]
                 elif op in _BINARY_OPS:
                     resultMap[form_id] = [new_vars, op,
@@ -146,15 +187,22 @@ class Evaluator:
                     else:
                         resultMap[form_id] = [new_vars, op, newFormula]
             else:
-                # postorder: reinsert with visited=True and process descendants
-                stack.append((theForm, True))
-                if op in _UNARY_OPS:
-                    stack.append((theForm[e1], False))
+                # postorder: reinsert and process the descendants first
+                if op in ('&', '|'):
+                    stack.append((theForm, 1))
+                    stack.append((theForm[e1], 0))
+                elif op in _UNARY_OPS:
+                    stack.append((theForm, 2))
+                    stack.append((theForm[e1], 0))
                 elif op in _BINARY_OPS:
-                    stack.append((theForm[e1], False))
-                    stack.append((theForm[e2], False))
+                    stack.append((theForm, 2))
+                    stack.append((theForm[e1], 0))
+                    stack.append((theForm[e2], 0))
                 elif op == 'fvar':
-                    stack.append((theForm[e2], False))
+                    stack.append((theForm, 2))
+                    stack.append((theForm[e2], 0))
+                else:  # 'exp': no descendants
+                    stack.append((theForm, 2))
 
         return resultMap[id(exp)]
 
@@ -257,7 +305,7 @@ class Evaluator:
         res[n - 1] = res_g[n - 1]
         for i in reversed(range(n - 1)):
             res[i] = self.eval_formula_in_event(
-                OR(res_g[i], AND(res_f[i], res[i + 1])), i, traza)
+                simp_or(res_g[i], simp_and(res_f[i], res[i + 1])), i, traza)
         return res
 
     def eval_F(self, exp, traza):
@@ -270,7 +318,7 @@ class Evaluator:
             if already_true:  # F f holds at i+1, hence at every earlier event
                 res[i] = TRUE()
             else:
-                res[i] = self.eval_formula_in_event(OR(res_parcial[i], res[i + 1]), i, traza)
+                res[i] = self.eval_formula_in_event(simp_or(res_parcial[i], res[i + 1]), i, traza)
                 already_true = is_true(res[i])
         return res
 
@@ -284,7 +332,7 @@ class Evaluator:
             if already_false:  # G f fails at i+1, hence at every earlier event
                 res[i] = FALSE()
             else:
-                res[i] = self.eval_formula_in_event(AND(res_parcial[i], res[i + 1]), i, traza)
+                res[i] = self.eval_formula_in_event(simp_and(res_parcial[i], res[i + 1]), i, traza)
                 already_false = is_false(res[i])
         return res
 
@@ -307,7 +355,7 @@ class Evaluator:
         res[0] = res_g[0]
         for i in range(1, n):
             res[i] = self.eval_formula_in_event(
-                OR(res_g[i], AND(res_f[i], res[i - 1])), i, traza)
+                simp_or(res_g[i], simp_and(res_f[i], res[i - 1])), i, traza)
         return res
 
     def eval_O(self, exp, traza):
@@ -320,7 +368,7 @@ class Evaluator:
             if already_true:  # O f holds at i-1, hence at every later event
                 res[i] = TRUE()
             else:
-                res[i] = self.eval_formula_in_event(OR(res_f[i], res[i - 1]), i, traza)
+                res[i] = self.eval_formula_in_event(simp_or(res_f[i], res[i - 1]), i, traza)
                 already_true = is_true(res[i])
         return res
 
@@ -334,7 +382,7 @@ class Evaluator:
             if already_false:  # H f fails at i-1, hence at every later event
                 res[i] = FALSE()
             else:
-                res[i] = self.eval_formula_in_event(AND(res_f[i], res[i - 1]), i, traza)
+                res[i] = self.eval_formula_in_event(simp_and(res_f[i], res[i - 1]), i, traza)
                 already_false = is_false(res[i])
         return res
 
@@ -344,28 +392,29 @@ class Evaluator:
 
     def eval_Not(self, exp, traza):
         res_f = self.eval_formula(exp[e1], traza)
-        return [self.eval_formula_in_event(NOT(res_f[i]), i, traza) for i in range(len(traza))]
+        return [self.eval_formula_in_event(simp_not(res_f[i]), i, traza)
+                for i in range(len(traza))]
 
     def eval_AND(self, exp, traza):
         res_f1 = self.eval_formula(exp[e1], traza)
         res_f2 = self.eval_formula(exp[e2], traza)
-        return [self.eval_formula_in_event(
-                    [res_f1[i][0] | res_f2[i][0], '&', res_f1[i], res_f2[i]], i, traza)
+        return [self.eval_formula_in_event(simp_and(res_f1[i], res_f2[i]), i, traza)
                 for i in range(len(traza))]
 
     def eval_OR(self, exp, traza):
         res_f1 = self.eval_formula(exp[e1], traza)
         res_f2 = self.eval_formula(exp[e2], traza)
-        return [self.eval_formula_in_event(
-                    [res_f1[i][0] | res_f2[i][0], '|', res_f1[i], res_f2[i]], i, traza)
+        return [self.eval_formula_in_event(simp_or(res_f1[i], res_f2[i]), i, traza)
                 for i in range(len(traza))]
 
     def eval_fvar(self, exp, traza):
-        n = len(traza)
         freezeVar = exp[e1]
-        newRow = self.eval_formula(exp[e2], traza)
-        newRow = [self.replace(newRow, i, newRow[i], freezeVar) for i in range(n)]
-        return [self.eval_formula_in_event(newRow[i], i, traza) for i in range(n)]
+        row = self.eval_formula(exp[e2], traza)
+        # substitution and simplification are fused: the formula substituted at
+        # an event is reduced (usually to True/False) before the next one is
+        # built, so only one substituted formula is alive at a time
+        return [self.eval_formula_in_event(self.replace(traza, i, row[i], freezeVar), i, traza)
+                for i in range(len(traza))]
 
     def eval_exp(self, exp, traza):
         return [self.eval_formula_in_event(exp, i, traza) for i in range(len(traza))]

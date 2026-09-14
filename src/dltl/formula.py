@@ -102,6 +102,44 @@ def EQ(exp1, exp2):
     return AND(IMP(exp1, exp2), IMP(exp2, exp1))
 
 
+# --- simplifying constructors ----------------------------------------------
+# The evaluator builds nodes out of *partially evaluated* sub-formulas. A child
+# that is already TRUE or FALSE fixes the value of its parent even when the
+# parent still has free freeze variables, so the node can be folded on the spot
+# instead of being carried along -- and copied by ``Evaluator.replace``, once
+# per freeze position -- until those variables are bound.
+
+def simp_and(exp1, exp2):
+    """``AND`` folding the constant cases, with or without free variables."""
+    if is_false(exp1) or is_false(exp2):
+        return FALSE()
+    if is_true(exp1):
+        return exp2
+    if is_true(exp2):
+        return exp1
+    return AND(exp1, exp2)
+
+
+def simp_or(exp1, exp2):
+    """``OR`` folding the constant cases, with or without free variables."""
+    if is_true(exp1) or is_true(exp2):
+        return TRUE()
+    if is_false(exp1):
+        return exp2
+    if is_false(exp2):
+        return exp1
+    return OR(exp1, exp2)
+
+
+def simp_not(exp):
+    """``NOT`` folding the constant cases, with or without free variables."""
+    if is_true(exp):
+        return FALSE()
+    if is_false(exp):
+        return TRUE()
+    return NOT(exp)
+
+
 # --- future ----------------------------------------------------------------
 def X(exp):
     return [exp[v], 'X', exp]

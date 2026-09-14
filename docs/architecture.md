@@ -323,8 +323,19 @@ deliberate and documented in the README.
 of the work.
 
 The propositional operators combine the two lists position-wise. Each
-combination is not built naively but passed through
+combination is built with the *simplifying constructors* `simp_and`,
+`simp_or` and `simp_not` of `formula.py`, which fold the constant cases
+(`FALSE & f = FALSE`, `TRUE | f = TRUE`, `TRUE & f = f`, …) **even when the
+operands still have free freeze variables**: a sub-formula that is already
+`TRUE` or `FALSE` fixes the value of its parent whatever those variables end
+up binding to. The folded node is then passed through
 `eval_formula_in_event` (6.2), which simplifies it as far as possible.
+
+This is what keeps the recurrences above cheap. In `F(b & f)`, for instance,
+the events where the atom `b` does not hold contribute `FALSE` and disappear,
+so `res[i]` is shared with `res[i+1]` instead of adding a node: the list of
+`n` results is backed by as many nodes as there are events that can satisfy
+the formula, not by one per event.
 
 ### 6.2 Simplification at an event: `eval_formula_in_event`
 
@@ -335,7 +346,8 @@ combination is not built naively but passed through
 * `&`, `|`, `!` apply the usual short-circuit rules (`FALSE & f = FALSE`,
   `TRUE & f = f`, …) so that a constant operand disappears;
 * a node whose `vars` is not empty is left untouched: it cannot be decided
-  yet;
+  yet (nothing is lost by this, because it was built with the simplifying
+  constructors and its constant operands are already folded away);
 * an `fvar` node binds its variable to the current event (6.3) and the
   result is simplified again.
 
@@ -357,9 +369,18 @@ partially evaluated nodes that still mention `z`. Then, for every event `i`,
   `THE_TRACE[i]`, using the regular expression `\bz\b`;
 * if the expression has no remaining variables it is `eval`'d immediately
   and becomes a constant; otherwise it is kept, with its rewritten text,
-  until the next variable is bound.
+  until the next variable is bound;
+* rebuilt `&`, `|` and `!` nodes are folded with the simplifying constructors,
+  so a branch that has just become constant collapses instead of being copied;
+* the operands of `&` and `|` are substituted in *short circuit*: the second
+  one is visited, and its data expressions evaluated, only when the first one
+  leaves the result open. Because `F` and `G` build their recurrence with the
+  value at the current event as first operand, the substitution walks the
+  suffix of the trace and stops at the first event that settles the formula.
 
 Finally `eval_formula_in_event` simplifies the substituted node at event `i`.
+The substitution and the simplification are fused in one pass over the events,
+so only one substituted formula is alive at a time.
 This is why nested freezes such as `x.(F y.("(x,y)x[V] == y[V]"))` work: the
 inner `F y.(...)` is evaluated first and yields, at each position, a formula
 over `x` only; the outer freeze then binds `x` and the remaining expressions
@@ -587,10 +608,14 @@ configuration is in `pyproject.toml`.
 * Data expressions are evaluated with `eval`; formula files must be trusted.
 * Attribute names must be valid Python identifiers that are not reserved by
   the lexer (`U`, `S`, `X`, `Y`, `G`, `H`, `F`, `O`, `true`, `false`).
-* The evaluation is polynomial in the length of the trace for each freeze
-  level, but nested freezes multiply the work: `x.(F y.(...))` evaluates the
-  inner formula once per event of the outer one. Long traces with deeply
-  nested freezes are slow.
+* Nested freezes multiply the work: `x.(F y.(...))` may evaluate the inner
+  formula once per event of the outer one, which is quadratic in the length
+  of the trace. The folding and the short circuit of 6.3 bring the usual
+  cases down to the events that can actually satisfy the formula (a formula
+  like `F(x.(a & F(y.(b & "...")))` costs one data expression per pair of
+  `a`/`b` events, and stops at the first match), but a formula whose data
+  expression is false for most pairs of events still pays the quadratic
+  price.
 * Traces are loaded entirely in memory; the loader is not streaming.
 * Traces are evaluated sequentially. Since each trace is independent, the
   evaluation could be distributed over several processes; the prototype had

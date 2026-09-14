@@ -43,6 +43,16 @@ to be published) onto the packaged code base.
 
 ### Changed
 
+- Partially evaluated formulas are simplified as soon as one of their
+  sub-formulas is known, even if freeze variables are still free, and the
+  operands of `&` and `|` are substituted in short circuit. Nested freezes
+  such as `F(x.(a & F(y.(b & "(x,y)y[T]-x[T]<=120"))))` were quadratic in the
+  length of the trace, in time *and* in memory, because the substitution
+  rebuilt the whole suffix of the trace once per event; they now cost one data
+  expression per pair of events that can satisfy them and stop at the first
+  match. On a 5.3-million-event log the formula above went from exhausting the
+  memory of the machine (`Killed`) to about a minute; a trace of 2000 events
+  went from 39 s and 1.9 GB to 0.01 s and 25 MB. Results are unchanged.
 - The trace lengths file is `<model>_trace_lengths.csv` (was `.txt`).
 - `examples/sample.mod` is the prototype's updated model (trace `id2` has `c`
   events); one column of the reference `.norm` changed accordingly.
