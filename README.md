@@ -433,6 +433,7 @@ examples/           example models and formulas; examples/synthea is a semantic
                     example with SPARQL-backed propositions (needs pyoxigraph)
 docs/grammar.md     formal grammar and operator precedence
 docs/architecture.md  technical description of the design and implementation
+docs/performance.md   what was measured and changed to make the checker fast, with numbers
 ```
 
 Run the tests with `pytest` and the linter with `ruff check src tests`

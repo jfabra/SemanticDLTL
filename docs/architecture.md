@@ -70,7 +70,8 @@ SemanticDLTL/                (repository root)
 ├── README.md  CHANGELOG.md  CITATION.cff  LICENSE
 ├── docs/
 │   ├── grammar.md          operator precedence and formal grammar
-│   └── architecture.md     this document
+│   ├── architecture.md     this document
+│   └── performance.md      measurements and the changes made for efficiency
 ├── src/dltl/               the package
 │   ├── __init__.py         version and public re-exports
 │   ├── __main__.py         python -m dltl
