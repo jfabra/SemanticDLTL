@@ -18,6 +18,7 @@ build/
 # Model checker outputs (generated next to the .mod file)
 *.res
 *.norm
+*.forms
 *_trace_lengths.csv
 !tests/golden/*
 
@@ -29,3 +30,9 @@ examples/synthea/store/
 
 # Architecture diagram generated with archify (kept local)
 docs/archify/
+
+# Session transcripts dumped in the repository root
+/*command-name*.txt
+
+# Dark patterns example (very large logs, kept local for now)
+examples/darkpatterns/
