@@ -36,15 +36,22 @@ The first character of each header field is the attribute type:
     '@'  set of strings ("v1;v2")  '$'  dictionary ("k1=v1;k2=v2")
 
 Each event is stored as a tuple: position ``I_POS`` (0) holds the position of
-the event in its trace (starting at 1), position ``I_ATOM`` (1) holds the *set*
-of atomic propositions of the event, and the following positions hold the
-values of the non-atomic attributes, in header order. ``Log.column_index``
-maps each non-atomic attribute name to its position in that tuple, so that
-inside a data expression ``x[V]`` reads attribute ``V`` of the event frozen
-in ``x``.
+the event in its trace (starting at 1), position ``I_ATOM`` (1) holds the
+*frozenset* of atomic propositions of the event, and the following positions
+hold the values of the non-atomic attributes, in header order.
+``Log.column_index`` maps each non-atomic attribute name to its position in
+that tuple, so that inside a data expression ``x[V]`` reads attribute ``V`` of
+the event frozen in ``x``.
+
+Values are shared between the events that spell them identically (the set of
+atoms, a string, a float, the ``@`` frozenset or the ``$`` dictionary of one
+event may be the very same object in a million others): a log is a few
+hundred bytes per event instead of more than a kilobyte, and it loads faster.
+Attribute values must therefore be treated as immutable by user propositions.
 """
 from __future__ import annotations
 
+import gc
 import gzip
 import sys
 from dataclasses import dataclass
@@ -94,9 +101,10 @@ def cast_format(value_str: str, format: str) -> bool | float | str:
 def cast(value_str: str) -> bool | float | str:
     """Cast ``value_str`` depending on its content: bool, float or string."""
     val = value_str.strip()
-    if val.lower() == 'true':
+    lowered = val.lower()
+    if lowered == 'true':
         return True
-    if val.lower() == 'false':
+    if lowered == 'false':
         return False
     try:
         return float(val)
@@ -127,34 +135,72 @@ def _parse_header(head: str) -> tuple[list[str], tuple[str, ...], tuple[str, ...
     return attrib_desc, formats, field_names, column_index
 
 
-def _make_event(formats: tuple[str, ...], field_names: tuple[str, ...], values: list[str],
-                column_index: dict[str, int], line_no: int, position: int) -> Event:
-    """Build the event tuple from the raw attribute values of one line.
+# Distinct raw values remembered per column. Categorical columns (atoms, user
+# ids, sites, the emotion scores that are mostly 0.0) fit entirely and their
+# values are shared by every event; a column of unique values (a timestamp)
+# fills its cache once and is then parsed as before.
+_VALUE_CACHE_LIMIT = 65536
 
-    ``position`` is the 1-based position of the event in its trace.
+
+def _parse_value(fmt: str, raw: str, line_no: int) -> Any:
+    """Value of a non-atomic attribute of type ``fmt`` from its raw text."""
+    if fmt == '@':
+        return frozenset(v.strip() for v in raw.split(VALS_SEP))
+    if fmt == '$':
+        d: dict[str, Any] = {}
+        for pair in raw.split(VALS_SEP):
+            key, sep, value = pair.partition('=')
+            if not sep:
+                print(f"Error processing dictionary attribute values, line {line_no}: "
+                      f"'{pair}'", file=sys.stderr)
+                continue
+            d[key.strip()] = cast(value)
+        return d
+    return cast_format(raw, fmt)  # 'n', 'b', 's'
+
+
+class _EventBuilder:
+    """Builds the event tuples of one model, sharing the values already seen.
+
+    One cache per column maps the raw text of a value to the parsed value
+    (bounded by ``_VALUE_CACHE_LIMIT``); the atom columns share one cache
+    keyed by their raw texts, so identical sets of atoms are one frozenset.
+    ``atomics`` collects every atomic proposition of the model.
     """
-    if len(values) != len(formats):
-        raise ValueError(f"line {line_no}: expected {len(formats)} attribute values, "
-                         f"got {len(values)}")
-    event: list[Any] = [position, set()] + [None] * len(column_index)
-    for fmt, name, raw in zip(formats, field_names, values, strict=True):
-        if fmt == 'a':
-            event[I_ATOM].add(raw.strip())
-        elif fmt == '@':
-            event[column_index[name]] = {v.strip() for v in raw.split(VALS_SEP)}
-        elif fmt == '$':
-            d: dict[str, Any] = {}
-            for pair in raw.split(VALS_SEP):
-                key, sep, value = pair.partition('=')
-                if not sep:
-                    print(f"Error processing dictionary attribute values, line {line_no}: "
-                          f"'{pair}'", file=sys.stderr)
-                    continue
-                d[key.strip()] = cast(value)
-            event[column_index[name]] = d
-        else:  # 'n', 'b', 's'
-            event[column_index[name]] = cast_format(raw, fmt)
-    return tuple(event)
+
+    def __init__(self, formats: tuple[str, ...]):
+        self.formats = formats
+        self.atom_columns = tuple(i for i, fmt in enumerate(formats) if fmt == 'a')
+        self.attr_columns = tuple(i for i, fmt in enumerate(formats) if fmt != 'a')
+        self.caches: dict[int, dict[str, Any]] = {i: {} for i in self.attr_columns}
+        self.atom_cache: dict[Any, frozenset[str]] = {}
+        self.atomics: set[str] = set()
+
+    def event(self, values: list[str], line_no: int, position: int) -> Event:
+        """Event tuple from the raw attribute values of one line (``position`` is 1-based)."""
+        if len(values) != len(self.formats):
+            raise ValueError(f"line {line_no}: expected {len(self.formats)} attribute values, "
+                             f"got {len(values)}")
+        atom_columns = self.atom_columns
+        key = values[atom_columns[0]] if len(atom_columns) == 1 else \
+            tuple(values[i] for i in atom_columns)
+        atoms = self.atom_cache.get(key)
+        if atoms is None:
+            atoms = frozenset(values[i].strip() for i in atom_columns)
+            self.atomics |= atoms
+            if len(self.atom_cache) < _VALUE_CACHE_LIMIT:
+                self.atom_cache[key] = atoms
+        event = [position, atoms]
+        for i in self.attr_columns:
+            raw = values[i]
+            cache = self.caches[i]
+            value = cache.get(raw, cache)  # the cache itself marks a miss (None is a value)
+            if value is cache:
+                value = _parse_value(self.formats[i], raw, line_no)
+                if len(cache) < _VALUE_CACHE_LIMIT:
+                    cache[raw] = value
+            event.append(value)
+        return tuple(event)
 
 
 # ---------------------------------------------------------------------------
@@ -190,28 +236,41 @@ class Log:
                           and Path(root + SUF_MOD + SUF_GZ).exists())
         opener = gzip.open if compressed else open
         traces: dict[str, list[Event]] = {}
-        atomics: set[str] = set()
-        with opener(root + SUF_MOD + (SUF_GZ if compressed else ''), 'rt') as f:
-            attrib_desc, formats, field_names, column_index = _parse_header(f.readline().strip())
-            for line_no, line in enumerate(f, start=2):
-                line = line.strip()
-                if not line:
-                    continue
-                trace_id, _, rest = line.partition(ID_SEP)
-                trace = traces.setdefault(trace_id, [])
-                event = _make_event(formats, field_names, rest.split(ATRIB_SEP),
-                                    column_index, line_no, position=len(trace) + 1)
-                atomics |= event[I_ATOM]
-                trace.append(event)
+        # the loop allocates millions of long-lived containers: the cyclic
+        # garbage collector would traverse them all again and again for nothing
+        gc_was_enabled = gc.isenabled()
+        gc.disable()
+        try:
+            with opener(root + SUF_MOD + (SUF_GZ if compressed else ''), 'rt') as f:
+                attrib_desc, formats, field_names, column_index = _parse_header(
+                    f.readline().strip())
+                builder = _EventBuilder(formats)
+                current_id, trace = None, []
+                for line_no, line in enumerate(f, start=2):
+                    line = line.strip()
+                    if not line:
+                        continue
+                    trace_id, _, rest = line.partition(ID_SEP)
+                    if trace_id != current_id:  # the events of a trace are usually contiguous
+                        current_id = trace_id
+                        trace = traces.setdefault(trace_id, [])
+                    trace.append(builder.event(rest.split(ATRIB_SEP), line_no, len(trace) + 1))
+        finally:
+            if gc_was_enabled:
+                gc.enable()
         sorted_ids = sorted(traces)
-        return cls(path=root,
-                   traces={tid: tuple(traces[tid]) for tid in sorted_ids},
-                   sorted_ids=sorted_ids,
-                   atomics=frozenset(atomics),
-                   column_index=column_index,
-                   attrib_desc=attrib_desc,
-                   formats=formats,
-                   field_names=field_names)
+        log = cls(path=root,
+                  traces={tid: tuple(traces[tid]) for tid in sorted_ids},
+                  sorted_ids=sorted_ids,
+                  atomics=frozenset(builder.atomics),
+                  column_index=column_index,
+                  attrib_desc=attrib_desc,
+                  formats=formats,
+                  field_names=field_names)
+        # the model lives for the whole session: keep the collector from
+        # traversing it during the checks
+        gc.freeze()
+        return log
 
     # --- derived data ------------------------------------------------------
     @property

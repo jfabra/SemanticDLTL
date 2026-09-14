@@ -61,6 +61,14 @@ to be published) onto the packaged code base.
   name of a freeze variable may now appear inside string literals of its
   expression (`'x' in x[att]`). A variable must not be called like an
   attribute or like `COL`, `PROP`, `I_POS`, `I_ATOM`.
+- Events share their values: identical texts in a column give the same
+  object (string, float, frozenset of atoms, `@` frozenset or `$`
+  dictionary), the collector is off while a model is loaded and the model is
+  frozen afterwards. A 412,000-event log with 17 attributes loads in 1.2 s
+  instead of 1.8 s and takes 300 bytes per event instead of 1,150; with the
+  smaller heap the checks themselves are 1.5 to 3 times faster. The set of
+  atoms of an event (`x[I_ATOM]`) and the `@` attributes are now frozensets,
+  and attribute values must not be modified by user propositions.
 - The trace lengths file is `<model>_trace_lengths.csv` (was `.txt`).
 - `examples/sample.mod` is the prototype's updated model (trace `id2` has `c`
   events); one column of the reference `.norm` changed accordingly.

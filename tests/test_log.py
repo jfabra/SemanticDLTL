@@ -68,6 +68,27 @@ def test_every_attribute_type_and_defaults(tmp_path: Path):
     assert e2[5] == {""} and e2[6] == {}
 
 
+def test_events_share_repeated_values(tmp_path: Path):
+    p = write_mod(tmp_path, "aA,nN,sS,@Q,$D\n"
+                            "t,x&1.5&hello&u;v&k=1\n"
+                            "t,x&1.5&hello&u;v&k=1\n"
+                            "t,y&2.5&bye&u&k=2\n")
+    e1, e2, e3 = Log.load(p).traces["t"]
+    assert e1[1:] == e2[1:]
+    # identical values are the same object, whatever their type
+    assert all(a is b for a, b in zip(e1[1:], e2[1:], strict=True))
+    assert not any(a is b for a, b in zip(e1[1:], e3[1:], strict=True))
+    assert isinstance(e1[I_ATOM], frozenset) and isinstance(e1[4], frozenset)
+
+
+def test_value_cache_is_bounded(tmp_path: Path, monkeypatch):
+    from dltl import log as log_module
+    monkeypatch.setattr(log_module, "_VALUE_CACHE_LIMIT", 2)
+    p = write_mod(tmp_path, "aA,nN\n" + "".join(f"t,x&{i}\n" for i in range(5)))
+    log = Log.load(p)
+    assert [e[2] for e in log.traces["t"]] == [0.0, 1.0, 2.0, 3.0, 4.0]
+
+
 def test_column_numbering_skips_atomics(tmp_path: Path):
     p = write_mod(tmp_path, "aA,nN1,aB,sS2,nN3\nt,x&1&y&s&2\n")
     log = Log.load(p)

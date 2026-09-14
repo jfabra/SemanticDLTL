@@ -160,14 +160,14 @@ column index became an attribute of `Log` handed explicitly to `Evaluator`
 ### 4.1 Events, traces and the `Log`
 
 An event is a tuple. Position `I_POS` (0) holds the **position of the event
-in its trace**, starting at 1; position `I_ATOM` (1) holds the **set of atomic
-propositions** of the event; positions 2, 3, … hold the values of the
+in its trace**, starting at 1; position `I_ATOM` (1) holds the **frozenset of
+atomic propositions** of the event; positions 2, 3, … hold the values of the
 non-atomic attributes in header order. For the header `aE,nV,@att,$p` and the
 line `id0,a&4&a;1&a=1;b=2` (first event of its trace) the event is
 
 ```python
-(1, {'a'}, 4.0, {'a', '1'}, {'a': 1.0, 'b': 2.0})
-# pos  E     V     att          p
+(1, frozenset({'a'}), 4.0, frozenset({'a', '1'}), {'a': 1.0, 'b': 2.0})
+# pos  E                V     att                     p
 ```
 
 Values are cast when loading (`log.cast_format` for `n`/`b`/`s` columns,
@@ -176,6 +176,23 @@ numeric column is reported and stored as `0.0`). Atomic columns do not occupy
 a position: several `a` columns all contribute to the set at `I_ATOM`. The
 position stored at `I_POS` is what `x[#]` denotes in data expressions
 (`x[#]` is compiled as `x[I_POS]`, so both forms give the same value).
+
+Values are **shared** between events: `log._EventBuilder` keeps, per column,
+a cache from the raw text of a value to the parsed value (bounded to
+`_VALUE_CACHE_LIMIT` distinct texts, so that a column of unique values such
+as a timestamp does not grow it without limit), and one cache for the set of
+atoms. Two events that spell a value identically hold the same object, be it
+a string, a float, the frozenset of atoms or a `$` dictionary. On real logs
+this is the difference between more than a kilobyte and a few hundred bytes
+per event, and it makes loading faster; the price is that attribute values
+must be treated as immutable by user propositions (the `@` sets are
+frozensets for that reason; a `$` dictionary must not be modified).
+
+`Log.load` also disables the cyclic garbage collector while it builds the
+model, which allocates millions of long-lived containers that every
+collection would otherwise traverse again, and calls `gc.freeze()` once the
+model is built so that the collections triggered by the checks (which
+allocate many short-lived nodes) do not traverse it either.
 
 A trace is a tuple of events, and `Log` (a frozen dataclass) is the loaded
 model:
