@@ -26,6 +26,12 @@ classifiers = [
 ]
 dependencies = []
 
+[project.urls]
+Homepage = "https://github.com/jfabra/SemanticDLTL"
+Repository = "https://github.com/jfabra/SemanticDLTL"
+Changelog = "https://github.com/jfabra/SemanticDLTL/blob/main/CHANGELOG.md"
+Documentation = "https://github.com/jfabra/SemanticDLTL/blob/main/README.md"
+
 [project.optional-dependencies]
 dev = ["pytest", "ruff"]
 synthea = ["pyoxigraph"]  # SPARQL-backed propositions of examples/synthea

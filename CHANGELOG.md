@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.1.0 (unreleased)
+## 1.1.0 (2026-09-15)
 
 Port of the second version of the prototype (the one that was actually meant
 to be published) onto the packaged code base.
@@ -59,7 +59,7 @@ to be published) onto the packaged code base.
   based on `pathos`) is not included: it did not run against the prototype's
   own evaluator. Parallel evaluation of traces is left as future work.
 
-## 1.0.0
+## 1.0.0 (2026-09-02)
 
 First packaged release of the model checker, now called SemanticDLTL
 (importable as `dltl`, command `dltl-mc`, `python -m dltl` or the legacy

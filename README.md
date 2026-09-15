@@ -1,5 +1,9 @@
 # SemanticDLTL — a DLTL model checker
 
+[![License: GPL v3](https://img.shields.io/badge/License-GPL_v3-blue.svg)](LICENSE)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](pyproject.toml)
+[![Version 1.1.0](https://img.shields.io/badge/version-1.1.0-green.svg)](CHANGELOG.md)
+
 *SemanticDLTL* checks the traces of an event log against **DLTL** formulas: linear
 temporal logic over finite words, extended with **freeze operators** that bind
 the data attributes of an event to a variable, so that properties can relate
@@ -32,11 +36,12 @@ pip install -e ".[dev]"    # to run the tests (pytest, ruff)
 pip install ".[synthea]"   # to run the semantic example (adds pyoxigraph)
 ```
 
-For development, `make venv` creates a virtual environment in `.venv/` with
+For development on macOS or Linux, `make venv` creates a virtual environment in `.venv/` with
 the package installed in editable mode and the development tools; `make test`,
 `make lint` and `make sample` run the test-suite, the linter and the checker on
 the sample model. The virtual environment is local to each machine and is not
-part of the repository.
+part of the repository. On Windows use the manual commands of the
+[Test suite](#test-suite) section instead of the `Makefile`.
 
 This installs the `dltl` package and the `dltl-mc` command. The checker can
 also be run without installing, from the repository root, with
