@@ -1,5 +1,5 @@
 cff-version: 1.2.0
-message: "If you use this software, please cite the paper below."
+message: "If you use this software, please cite it as below. The underlying method is described in the paper listed under references."
 type: software
 title: "SemanticDLTL: a DLTL model checker over finite traces"
 authors:
@@ -27,16 +27,25 @@ identifiers:
     description: "Version 1.1.0"
 repository-code: "https://github.com/jfabra/SemanticDLTL"
 license: GPL-3.0-or-later
-preferred-citation:
-  type: conference-paper
-  title: "A Linear Temporal Logic Model Checking Method over Finite Words with Correlated Transition Attributes"
-  authors:
-    - family-names: Couvreur
-      given-names: Jean-Michel
-    - family-names: Ezpeleta
-      given-names: Joaquín
-  collection-title: "Data-Driven Process Discovery and Analysis (SIMPDA 2017), Lecture Notes in Business Information Processing, vol. 340"
-  publisher:
-    name: Springer
-  year: 2019
-  url: "https://hal.science/hal-01944569v1"
+url: "https://github.com/jfabra/SemanticDLTL"
+abstract: "Model checker for DLTL, linear temporal logic over finite traces with freeze operators and data attributes, extended with semantic propositions that query knowledge graphs."
+keywords:
+  - model checking
+  - temporal logic
+  - freeze operators
+  - event logs
+  - knowledge graphs
+  - SPARQL
+references:
+  - type: conference-paper
+    title: "A Linear Temporal Logic Model Checking Method over Finite Words with Correlated Transition Attributes"
+    authors:
+      - family-names: Couvreur
+        given-names: Jean-Michel
+      - family-names: Ezpeleta
+        given-names: Joaquín
+    collection-title: "Data-Driven Process Discovery and Analysis (SIMPDA 2017), Lecture Notes in Business Information Processing, vol. 340"
+    publisher:
+      name: Springer
+    year: 2019
+    url: "https://hal.science/hal-01944569v1"
