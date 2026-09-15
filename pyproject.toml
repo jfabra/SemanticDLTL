@@ -33,7 +33,7 @@ Changelog = "https://github.com/jfabra/SemanticDLTL/blob/main/CHANGELOG.md"
 Documentation = "https://github.com/jfabra/SemanticDLTL/blob/main/README.md"
 
 [project.optional-dependencies]
-dev = ["pytest", "ruff"]
+dev = ["pytest", "ruff", "build", "twine"]
 synthea = ["pyoxigraph"]  # SPARQL-backed propositions of examples/synthea
 
 [project.scripts]
@@ -41,6 +41,11 @@ dltl-mc = "dltl.cli:main"
 
 [tool.hatch.version]
 path = "src/dltl/__init__.py"
+
+[tool.hatch.build.targets.sdist]
+# the source distribution carries the package, its tests and documentation,
+# not the multi-megabyte example logs nor local tooling
+exclude = ["examples/synthea/logs", "examples/synthea/workflows", "docs/", "Makefile", ".claude", "/20*.txt"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/dltl"]
