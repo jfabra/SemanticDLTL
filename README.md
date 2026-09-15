@@ -453,6 +453,12 @@ docs/architecture.md  technical description of the design and implementation
 Run the tests with `pytest` and the linter with `ruff check src tests`
 (see [Test suite](#test-suite) below).
 
+## Contributing
+
+Bug reports, questions and pull requests are welcome: see
+[CONTRIBUTING.md](CONTRIBUTING.md) for how to report a problem usefully and
+the rules for code changes.
+
 ## Authors and license
 
 SemanticDLTL is developed by Joaquín Ezpeleta and Javier Fabra (Universidad

@@ -45,7 +45,7 @@ path = "src/dltl/__init__.py"
 [tool.hatch.build.targets.sdist]
 # the source distribution carries the package, its tests and documentation,
 # not the multi-megabyte example logs nor local tooling
-exclude = ["examples/synthea/logs", "examples/synthea/workflows", "docs/", "Makefile", ".claude", "/20*.txt"]
+exclude = ["examples/synthea/logs", "examples/synthea/workflows", "docs/", "Makefile", ".github", ".claude", "/20*.txt"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/dltl"]
