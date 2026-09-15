@@ -1,9 +1,9 @@
 # SemanticDLTL — a DLTL model checker
 
-[![License: GPL v3](https://img.shields.io/badge/License-GPL_v3-blue.svg)](LICENSE)
-[![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](pyproject.toml)
-[![PyPI](https://img.shields.io/pypi/v/semanticdltl.svg)](https://pypi.org/project/semanticdltl/)
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.22777412.svg)](https://doi.org/10.5281/zenodo.22777412)
+[![PyPI](https://img.shields.io/pypi/v/semanticdltl.svg?color=orange&label=PyPI)](https://pypi.org/project/semanticdltl/)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-3776AB.svg?logo=python&logoColor=white)](pyproject.toml)
+[![License: GPL v3](https://img.shields.io/badge/license-GPL--3.0--or--later-brightgreen.svg)](LICENSE)
+[![DOI](https://img.shields.io/badge/DOI-10.5281%2Fzenodo.22777412-8A2BE2.svg)](https://doi.org/10.5281/zenodo.22777412)
 
 *SemanticDLTL* checks the traces of an event log against **DLTL** formulas: linear
 temporal logic over finite words, extended with **freeze operators** that bind
