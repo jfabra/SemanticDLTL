@@ -3,6 +3,7 @@
 [![License: GPL v3](https://img.shields.io/badge/License-GPL_v3-blue.svg)](LICENSE)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](pyproject.toml)
 [![Version 1.1.0](https://img.shields.io/badge/version-1.1.0-green.svg)](CHANGELOG.md)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.22777412.svg)](https://doi.org/10.5281/zenodo.22777412)
 
 *SemanticDLTL* checks the traces of an event log against **DLTL** formulas: linear
 temporal logic over finite words, extended with **freeze operators** that bind
@@ -448,8 +449,15 @@ SemanticDLTL is developed by Joaquín Ezpeleta and Javier Fabra (Universidad
 de Zaragoza, Spain) and María José Ibáñez (Universidad de La Rioja, Spain).
 Contact: semanticdltl@unizar.es.
 
-GPL-3.0-or-later. See [LICENSE](LICENSE) and, to cite this work,
-[CITATION.cff](CITATION.cff).
+GPL-3.0-or-later. See [LICENSE](LICENSE).
+
+The software is archived on Zenodo: DOI
+[10.5281/zenodo.22777412](https://doi.org/10.5281/zenodo.22777412) always
+resolves to the latest version, and each release has its own DOI
+(1.1.0: [10.5281/zenodo.22777413](https://doi.org/10.5281/zenodo.22777413)).
+To cite the tool, use [CITATION.cff](CITATION.cff) (GitHub shows a
+"Cite this repository" button with APA and BibTeX); to cite the method,
+use the SIMPDA 2017 paper referenced above.
 
 ## Test suite
 
