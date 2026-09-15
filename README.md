@@ -2,7 +2,7 @@
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPL_v3-blue.svg)](LICENSE)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](pyproject.toml)
-[![Version 1.1.0](https://img.shields.io/badge/version-1.1.0-green.svg)](CHANGELOG.md)
+[![PyPI](https://img.shields.io/pypi/v/semanticdltl.svg)](https://pypi.org/project/semanticdltl/)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.22777412.svg)](https://doi.org/10.5281/zenodo.22777412)
 
 *SemanticDLTL* checks the traces of an event log against **DLTL** formulas: linear
@@ -29,13 +29,23 @@ It implements the algorithm described in
 
 ## Installation
 
-Python 3.10 or later, no dependencies.
+Python 3.10 or later, no dependencies. From PyPI:
 
 ```
-pip install .              # from a checkout of this repository
-pip install -e ".[dev]"    # to run the tests (pytest, ruff)
-pip install ".[synthea]"   # to run the semantic example (adds pyoxigraph)
+pip install semanticdltl             # the checker
+pip install "semanticdltl[synthea]"  # plus pyoxigraph, for the semantic example
 ```
+
+or from a checkout of this repository:
+
+```
+pip install .              # the checker
+pip install -e ".[dev]"    # editable, with the test tools (pytest, ruff, build, twine)
+pip install ".[synthea]"   # with pyoxigraph, for the semantic example
+```
+
+Either way this installs the `dltl` package and the `dltl-mc` command. The
+examples and the test-suite are in the repository, not in the PyPI package.
 
 For development on macOS or Linux, `make venv` creates a virtual environment in `.venv/` with
 the package installed in editable mode and the development tools; `make test`,

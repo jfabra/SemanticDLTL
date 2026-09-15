@@ -2,6 +2,9 @@
 
 ## 1.1.0 (2026-09-15)
 
+First release on PyPI (`pip install semanticdltl`) and on Zenodo
+(DOI 10.5281/zenodo.22777413).
+
 Port of the second version of the prototype (the one that was actually meant
 to be published) onto the packaged code base.
 
