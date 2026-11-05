@@ -15,8 +15,8 @@ authors:
 contact:
   - name: SemanticDLTL team
     email: semanticdltl@unizar.es
-version: 1.1.0
-date-released: "2026-09-15"
+version: 1.2.0
+date-released: "2026-11-06"
 doi: 10.5281/zenodo.22777412
 identifiers:
   - type: doi

@@ -31,7 +31,7 @@ Typical use as a library::
 ``Log.load`` also reads XES event logs (``Log.load("log.xes")``); ``load_xes``
 does the same with a mapping schema and other options.
 """
-__version__ = "1.1.0"
+__version__ = "1.2.0"
 
 from dltl.evaluator import Evaluator, results_statistics  # noqa: E402
 from dltl.log import I_ATOM, I_POS, Log  # noqa: E402
