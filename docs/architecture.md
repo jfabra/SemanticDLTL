@@ -53,7 +53,7 @@ three layers:
 │                  macros.py                                    │
 ├───────────────────────────────────────────────────────────────┤
 │  Core            parser.py ──▶ formula.py ◀── evaluator.py    │
-│                  log.py                     propositions.py   │
+│                  log.py ◀── xes.py          propositions.py   │
 └───────────────────────────────────────────────────────────────┘
 ```
 
@@ -81,10 +81,12 @@ SemanticDLTL/                (repository root)
 │   ├── formula.py          formula node constructors and predicates
 │   ├── evaluator.py        Evaluator and results_statistics
 │   ├── log.py              Log (model loading, result files)
+│   ├── xes.py              loading of XES event logs
 │   └── propositions.py     default user propositions (PROP)
 ├── tests/                  pytest suite; tests/golden holds reference outputs
 └── examples/               sample models, init and formula files, extra propositions;
-                            examples/synthea: semantic example (logs + RDF graphs + SPARQL propositions)
+                            examples/synthea: semantic example (logs + RDF graphs + SPARQL propositions);
+                            examples/xes-example: a real XES event log with its mapping schema
 ```
 
 The package uses the *src layout*: the code is importable only after
@@ -98,7 +100,8 @@ root free of importable modules.
 | `formula.py` | 150 | Representation of formulas: constructors for every operator, `TRUE`/`FALSE`, predicates |
 | `parser.py` | 209 | Text → formula nodes |
 | `evaluator.py` | 342 | Formula × trace → one value per event |
-| `log.py` | 219 | `.mod` file → `Log`; result files |
+| `log.py` | 301 | `.mod` file → `Log`; result files |
+| `xes.py` | 360 | XES event log → `Log` |
 | `macros.py` | 37 | Textual expansion of `?name` macros |
 | `propositions.py` | 70 | Functions callable from data expressions |
 | `session.py` | 195 | State of a checking session, commands |
@@ -115,6 +118,9 @@ graph TD
     main[__main__] --> cli
     cli --> session
     cli --> log
+    cli --> xes
+    xes --> log
+    log -.->|.xes path| xes
     session --> evaluator
     session --> parser
     session --> macros
@@ -130,8 +136,11 @@ graph TD
     classDef rt stroke-dasharray: 5 5
 ```
 
-Dashed arrows are lazy imports of the default propositions module, performed
-inside a function so that a user-supplied module can replace it. The dashed
+Dashed arrows are lazy imports, performed inside a function: those of the
+default propositions module, so that a user-supplied module can replace it,
+and the one from `log` to `xes`, executed only when `Log.load` is given a
+`.xes` path (`xes` imports `log` at module level, so the opposite import
+cannot be). The dashed
 node stands for code that is not part of the package at all: Python files
 supplied by the user, loaded at run time either once (`--propositions`, in
 `cli.load_propositions`) or at any point of a session (`_LOAD`, in
@@ -143,7 +152,9 @@ package therefore has no dependency on user code, while user code may import
 session fills in. The following properties hold and are worth preserving:
 
 * `formula`, `log`, `macros` and `propositions` import nothing from the
-  package. They can be tested and reused in isolation.
+  package at module level. They can be tested and reused in isolation.
+* `xes` depends only on `log`: it produces header fields and raw values and
+  leaves the construction of the events to `Log.from_rows`.
 * `parser` and `evaluator` depend only on `formula`, i.e. on the shape of the
   nodes, never on each other.
 * Only `session` knows how the pieces fit together; only `cli` knows about
@@ -189,9 +200,28 @@ model:
 | `column_index` | `dict[str, int]` | non-atomic attribute name → position in the event tuple (from 2 on) |
 | `attrib_desc`, `formats`, `field_names` | header information | e.g. `['aE','nV','@att','$p']`, `('a','n','@','$')`, `('E','V','att','p')` |
 
+| `source` | `str` | file the model was read from when it is not `<path>.mod` (an XES log); shown by `_INFO` |
+
 `n_traces`, `n_events` and `trace_lengths` are derived properties.
 `column_index` is the bridge between attribute names used in formulas and
 positions in the tuples: for the header above it is `{'V': 2, 'att': 3, 'p': 4}`.
+
+A `Log` is built by `Log.from_rows(path, attrib_desc, rows)` from the header
+fields and one row `(line_no, trace_id, raw values)` per event, the values
+being strings written as in a `.mod` file. `Log.load` feeds it the lines of a
+`.mod` file. For an XES log (a path ending in `.xes` or `.xes.gz`) `Log.load`
+calls `xes.load_xes`, which reads the log once with `ElementTree.iterparse`, trace by trace,
+turns the attributes of each event into the raw strings of a `.mod` line
+(identifiers for atomic values, `.mod` separators replaced in strings, dates
+as milliseconds) according to a list of mappings (XES attribute → type and
+name), and hands the rows to `Log.from_rows`. The mappings are those of the
+optional schema file followed by the attributes found in the events, in order
+of first appearance; since an attribute can first appear in any event, the
+rows are kept until the end of the file and the shorter ones are completed
+with the value of a missing attribute. Going through raw values and the
+constructor of the `.mod` loader keeps a single definition of how values
+become events, and makes any model loaded from XES expressible as a `.mod`
+file.
 
 ### 4.2 Formulas
 
@@ -252,7 +282,7 @@ are exactly the rows of the `.res`, `.norm` and `.forms` files written by
 ```mermaid
 flowchart LR
     A[argv] -->|normalize_legacy_argv<br>build_parser| B[args]
-    B --> C[Log.load]
+    B --> C[Log.load<br>or load_xes]
     C --> D[Session]
     I[init file<br>formula file<br>stdin] -->|read_lines| E[lines]
     E --> F{Session.execute}
@@ -472,6 +502,9 @@ same code.
   one containing `$`. `read_file` applies it to a file.
 * `load_propositions` imports the default module or, with `--propositions`,
   a user file through `importlib`.
+* `load_log` calls `xes.load_xes` with the `--xes-*` options when
+  `--log-file` ends in `.xes` or `.xes.gz`, and `Log.load` otherwise; the
+  `--xes-*` options are rejected for a `.mod` model.
 * `main(argv) -> int` validates that the input files exist (exit code 1
   otherwise), loads the model, creates the session, runs the init file, then
   the formula file or standard input, and returns 0. With no arguments it
@@ -498,6 +531,10 @@ each proposition receives that URI and runs a SPARQL `ASK` restricted to the
 graph of the event. The checker itself knows nothing about RDF: the store,
 the queries and the optional dependency (`pyoxigraph`) live entirely in the
 propositions module, which is why the package has no dependencies.
+
+**New input formats.** A loader only has to produce the header fields and
+the raw values of each event and call `Log.from_rows`; `xes.py` is the
+example. Nothing else in the package depends on where a `Log` came from.
 
 **New commands.** Add a method to `Session` and register it in
 `_commands_0` or `_commands_2`; commands never reach the parser, so the
@@ -554,7 +591,7 @@ working; the deliberate departures are listed in `CHANGELOG.md`.
 
 ## 11. Testing strategy
 
-The suite (`tests/`, 69 cases) has two layers.
+The suite (`tests/`, 116 cases) has two layers.
 
 *Golden regression.* `tests/golden/` stores the output that the original
 prototype produced for `examples/sample` with its init and formula files.
@@ -572,7 +609,11 @@ precedence table; `test_evaluator.py` checks every operator on a hand-built
 four-event trace, position by position, including freeze over each attribute
 type and error recovery; `test_log.py` covers each attribute type, defaults,
 column numbering and the result writers; `test_macros.py` and
-`test_cli_args.py` cover expansion and argument handling respectively.
+`test_cli_args.py` cover expansion and argument handling respectively;
+`test_xes.py` covers the XES loader and checks that `examples/sample.xes`
+gives the model of `examples/sample.mod` and the golden results, and that
+the formulas of `examples/xes-example` give those of
+`tests/golden/xes-example.stdout`.
 Fixtures copy the example files into a temporary directory so that result
 files never land in the repository.
 

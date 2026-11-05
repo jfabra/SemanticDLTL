@@ -1,5 +1,35 @@
 # Changelog
 
+## Unreleased
+
+### New
+
+- XES event logs (`.xes`, or gzipped `.xes.gz`) are read directly:
+  `dltl-mc --log-file log.xes`, `Log.load("log.xes")` or
+  `dltl.load_xes(path, schema=..., trace_id_key=..., ignore=...)`. No `.mod`
+  file is written. By default `concept:name` is an atomic
+  proposition and the other attributes of the events get a type from their
+  XES type; `--xes-schema FILE.xml` gives types and names with a `mod:schema`
+  container, `--xes-ignore` loads only the attributes that appear in it and
+  `--xes-trace-id-key` chooses the trace identifier. Result files are written
+  next to the log.
+- `Log.from_rows` builds a model from header fields and raw event values; it
+  is the constructor shared by the `.mod` and XES loaders.
+- `examples/sample.xes` and `examples/sample.schema.xml`: the sample model as
+  an XES log.
+- `examples/xes-example/`: a real XES log, that of the Conformance Checking
+  Challenge 2019 (20 recorded procedures of central venous catheter
+  installation, 1394 events; CC BY 4.0), with a mapping schema, formulas and a
+  documented session. `make xes-example` runs it.
+
+### Changed
+
+- An empty value of a dictionary attribute (`$`) in a `.mod` file is an empty
+  dictionary, as before, but no longer prints "Error processing dictionary
+  attribute values".
+- `Log` has a new field `source`, the file the model was read from when it is
+  not `<path>.mod`; `_INFO` shows it.
+
 ## 1.1.0 (2026-09-15)
 
 First release on PyPI (`pip install semanticdltl`) and on Zenodo

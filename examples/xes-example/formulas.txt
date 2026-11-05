@@ -1,0 +1,35 @@
+; SemanticDLTL - XES example (Conformance Checking Challenge 2019). Run with:
+;   dltl-mc --log-file examples/xes-example/xes-example.xes \
+;           --xes-schema examples/xes-example/xes-example.schema.xml \
+;           --formula-file examples/xes-example/formulas.txt --no-interactive
+
+; --- atomic propositions: activities and lifecycle transitions ---------------
+; the procedure uses Doppler to identify the vessels
+F Doppler_identification
+; every puncture comes after the anaesthesia
+G (Puncture -> O Anesthetize)
+; the puncture is started more than once
+F (Puncture & start & X F (Puncture & start))
+
+; --- attributes of one event --------------------------------------------------
+; no activity ends, in the video, before it starts
+G x.("(x)x[VIDEOEND] >= x[VIDEOSTART]")
+; once the installation of the catheter begins, the earlier stages are over
+G x.("(x)x[STAGE] == 'Install Catheter'" -> G y.("(y)y[STAGE] == 'Install Catheter'"))
+
+; --- relating two events ------------------------------------------------------
+; activities do not overlap: every start is followed by its own complete
+G x.(start -> X y.(complete & "(x,y)x[ACTIVITY] == y[ACTIVITY]"))
+; a puncture that takes two minutes or more (timestamps are milliseconds)
+F x.(Puncture & start & X y.(Puncture & complete & "(x,y)y[timestamp] - x[timestamp] >= 120000"))
+; the procedure takes more than an hour, from its first event to its last
+x.(F y.(X false & "(x,y)y[timestamp] - x[timestamp] > 3600000"))
+
+; --- the two rounds, with a macro ---------------------------------------------
+_SET ?round 'Pre', 'Post'
+; procedures of each round
+x.("(x)x[ROUND] == ?round")
+; ... in which the puncture is started more than once
+x.("(x)x[ROUND] == ?round") & F (Puncture & start & X F (Puncture & start))
+; ... in which the position of the catheter is checked
+x.("(x)x[ROUND] == ?round") & F Check_catheter_position

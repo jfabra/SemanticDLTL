@@ -3,12 +3,15 @@
 | File | Content |
 | --- | --- |
 | `sample.mod` | Tiny model with three traces and one attribute of each type (used by the tests) |
+| `sample.xes` | The model of `sample.mod` as an XES event log, with a timestamp and a resource per event |
+| `sample.schema.xml` | Mapping schema for `sample.xes`: gives the XES attributes the types and names of `sample.mod` |
 | `sample.init` | Init file defining two macros with `_SET` |
 | `formulas.txt` | Formulas exercising the freeze operator, data expressions, macros, `_WRITE` and `_BYE` |
 | `sample2.mod` | Four traces with an extra string attribute `Extra` |
 | `formulas2.txt` | Two formulas on `sample2` combining nested freezes with `U` and `H` |
 | `extra_props.py` | Propositions to load during a session with `_LOAD` (see below) |
 | `session_macros.txt` | A session showing `_SET`, `_RE` and `_RANGE` macros |
+| `xes-example/` | A real XES event log (Conformance Checking Challenge 2019) read directly, with a mapping schema and a documented session (see its README) |
 | `synthea/` | Semantic example: clinical event logs generated from Synthea modules, each with a knowledge graph queried by SPARQL from the propositions (see its README) |
 
 Run the small example non-interactively:
@@ -17,6 +20,14 @@ Run the small example non-interactively:
 dltl-mc --log-file examples/sample --init-file examples/sample.init \
         --formula-file examples/formulas.txt --no-interactive
 dltl-mc --log-file examples/sample2 --formula-file examples/formulas2.txt --no-interactive
+```
+
+The same formulas on the XES version of the model, read directly (the results
+are the same):
+
+```
+dltl-mc --log-file examples/sample.xes --xes-schema examples/sample.schema.xml \
+        --init-file examples/sample.init --formula-file examples/formulas.txt --no-interactive
 ```
 
 or start an interactive session on it:

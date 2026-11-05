@@ -6,13 +6,14 @@
 #   make check    lint + test
 #   make sample   run the checker on the sample model (batch mode)
 #   make synthea  build the Oxigraph store of the semantic example and run its formulas
+#   make xes-example  run the checker on the XES example log (batch mode)
 #   make clean    remove caches, build artefacts and result files of the examples
 
 PYTHON ?= python3
 VENV   ?= .venv
 BIN    := $(VENV)/bin
 
-.PHONY: venv test lint check sample synthea clean
+.PHONY: venv test lint check sample synthea xes-example clean
 
 venv: $(BIN)/pytest
 
@@ -40,8 +41,14 @@ synthea: venv
 	    --propositions examples/synthea/propositions.py \
 	    --formula-file examples/synthea/formulas.txt --no-interactive
 
+xes-example: venv
+	$(BIN)/dltl-mc --log-file examples/xes-example/xes-example.xes \
+	    --xes-schema examples/xes-example/xes-example.schema.xml \
+	    --formula-file examples/xes-example/formulas.txt --no-interactive
+
 clean:
 	rm -rf .pytest_cache .ruff_cache build dist src/*.egg-info
 	find . -name __pycache__ -type d -prune -exec rm -rf {} +
 	rm -f examples/*.res examples/*.norm examples/*.forms examples/*_trace_lengths.csv
 	rm -rf examples/synthea/store examples/synthea/logs/*.res examples/synthea/logs/*.norm examples/synthea/logs/*.forms
+	rm -f examples/xes-example/*.res examples/xes-example/*.norm examples/xes-example/*.forms

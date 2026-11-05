@@ -38,7 +38,8 @@ def sample_dir(tmp_path: Path) -> Path:
     Returns the directory; the model is ``<dir>/sample.mod``. Result files
     written by the checker land in the same directory and never touch the repo.
     """
-    for name in ("sample.mod", "sample.init", "formulas.txt", "sample2.mod", "formulas2.txt"):
+    for name in ("sample.mod", "sample.init", "formulas.txt", "sample2.mod", "formulas2.txt",
+                 "sample.xes", "sample.schema.xml"):
         shutil.copy(EXAMPLES / name, tmp_path / name)
     return tmp_path
 

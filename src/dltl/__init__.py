@@ -27,6 +27,9 @@ Typical use as a library::
     session = Session(Log.load("examples/sample"))
     session.check_formula('F x.(b & "(x)x[V] == 10")')
     session.execute("_WRITE")
+
+``Log.load`` also reads XES event logs (``Log.load("log.xes")``); ``load_xes``
+does the same with a mapping schema and other options.
 """
 __version__ = "1.1.0"
 
@@ -34,6 +37,7 @@ from dltl.evaluator import Evaluator, results_statistics  # noqa: E402
 from dltl.log import I_ATOM, I_POS, Log  # noqa: E402
 from dltl.parser import parse_formula  # noqa: E402
 from dltl.session import CheckSummary, Session  # noqa: E402
+from dltl.xes import load_xes  # noqa: E402
 
-__all__ = ["I_ATOM", "I_POS", "CheckSummary", "Evaluator", "Log", "Session", "parse_formula",
-           "results_statistics", "__version__"]
+__all__ = ["I_ATOM", "I_POS", "CheckSummary", "Evaluator", "Log", "Session", "load_xes",
+           "parse_formula", "results_statistics", "__version__"]

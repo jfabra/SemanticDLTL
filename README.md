@@ -8,7 +8,9 @@
 *SemanticDLTL* checks the traces of an event log against **DLTL** formulas: linear
 temporal logic over finite words, extended with **freeze operators** that bind
 the data attributes of an event to a variable, so that properties can relate
-the attributes of different events of the same trace.
+the attributes of different events of the same trace. The log is given in the
+tool's own text format (`.mod`) or as a standard
+[XES](#xes-event-logs) event log (`.xes`).
 
 The *semantic* part is what the data attributes can point to: an attribute
 can hold the identifier of an event in a knowledge graph, and propositions
@@ -63,16 +65,20 @@ also be run without installing, from the repository root, with
 ```
 dltl-mc --log-file <model> [--init-file FILE] [--formula-file FILE]
         [--no-interactive] [--multi-line] [--propositions FILE.py]
+        [--xes-schema FILE.xml] [--xes-trace-id-key KEY] [--xes-ignore]
 ```
 
 | Option | Description | Default |
 | --- | --- | --- |
-| `--log-file MODEL` | the trace model, with or without the `.mod` suffix; a gzipped `.mod.gz` is accepted | **required** |
+| `--log-file MODEL` | the trace model, with or without the `.mod` suffix, or an XES event log (`.xes`); gzipped files (`.mod.gz`, `.xes.gz`) are accepted | **required** |
 | `--init-file FILE` | commands executed before reading formulas (typically macro definitions) | none |
 | `--formula-file FILE` | file with the formulas/commands to check | standard input |
 | `--interactive` / `--no-interactive` | show the `DLTL -> ` prompt when reading from standard input | interactive |
 | `--multi-line` | formulas may span several lines and are terminated by `$` | off |
 | `--propositions FILE.py` | Python file whose functions are available as `PROP.<name>` in data expressions | `dltl.propositions` |
+| `--xes-schema FILE.xml` | XES logs: XML file that gives a type and a name to the attributes of the events (see [XES event logs](#xes-event-logs)) | `concept:name` is an atomic proposition |
+| `--xes-trace-id-key KEY` | XES logs: trace attribute used as trace identifier | `concept:name` |
+| `--xes-ignore` | XES logs: load only the attributes that appear in the schema | off: every attribute is loaded |
 
 The syntax of the original prototype is still accepted:
 
@@ -243,6 +249,146 @@ Missing values default to `0`, `False` and `''` respectively.
 **Events.** `trace_id,value_1&value_2&...`, one value per header field, in
 order. Events of the same trace need not be contiguous; traces are sorted by
 id.
+
+## XES event logs
+
+`--log-file` also accepts an event log in
+[XES](https://www.xes-standard.org/) (eXtensible Event Stream, IEEE 1849),
+the interchange format of process mining tools. A file ending in `.xes` (or
+a gzipped `.xes.gz`) is read directly into memory: no `.mod` file is written.
+
+`examples/sample.xes` is the sample model as an XES log, with a timestamp and
+a resource added to each event:
+
+```xml
+<trace>
+    <string key="concept:name" value="id0"/>
+    <event>
+        <string key="concept:name" value="a"/>
+        <int key="V" value="4"/>
+        <list key="att">
+            <values>
+                <string key="item" value="a"/>
+                <int key="item" value="1"/>
+            </values>
+        </list>
+        <container key="p">
+            <int key="a" value="1"/>
+            <int key="b" value="2"/>
+        </container>
+        <date key="time:timestamp" value="2024-03-04T09:00:00.000+01:00"/>
+        <string key="org:resource" value="Ana"/>
+    </event>
+    ...
+```
+
+```
+$ dltl-mc --log-file examples/sample.xes
+----------------------------------------
+file:      examples/sample.xes
+#traces:   3
+#events:   17
+#atomics:  4
+att. desc: ['aconcept:name', 'nV', '@att', '$p', 'ntime:timestamp', 'sorg:resource']
+----------------------------------------
+DLTL -> F x.("(x)x[V] == 10")
+2,1,66.67,0.0
+DLTL -> F x.(b & "(x)x[COL['org:resource']] == 'Marta'")
+2,1,66.67,0.0
+```
+
+**Default mapping.** The trace identifier is the attribute `concept:name` of
+the trace (`trace_<n>`, counting from 0, for a trace without it; another
+attribute can be chosen with `--xes-trace-id-key`). The `concept:name` of an
+event, its activity, is an atomic proposition. Every other attribute of the
+events keeps its name and gets a type from its XES type, in the order in
+which the attributes first appear in the log:
+
+| XES type | Type in the model |
+| --- | --- |
+| `string` | `s` string |
+| `int`, `float` | `n` number |
+| `date` | `n` number: milliseconds since 1970-01-01 00:00:00 UTC |
+| `boolean` | `b` boolean |
+| `id` | `a` atomic proposition |
+| `list` | `@` set of strings |
+| `container` | `$` dictionary |
+
+An XES name such as `org:resource` is not a Python identifier, so in a data
+expression it is read as `x[COL['org:resource']]` rather than `x[Resource]`.
+A mapping schema gives it a better name.
+
+**Mapping schema.** `--xes-schema FILE.xml` names an XML file that gives a
+type and a name to the attributes you choose (`examples/sample.schema.xml`):
+
+```xml
+<container key="mod:schema">
+    <string key="concept:name" value="aE"/>
+    <string key="V" value="nV"/>
+    <string key="att" value="@att"/>
+    <string key="p" value="$p"/>
+    <string key="time:timestamp" value="nTime"/>
+    <string key="org:resource" value="sResource"/>
+</container>
+```
+
+`key` is the name of the attribute in the XES file; the first character of
+`value` is its type in the model and the rest its name, exactly as in the
+header of a `.mod` file. Without a schema only `concept:name` is mapped (to
+an atomic proposition).
+
+By default **every** attribute of the events is loaded: those that appear in
+the schema with the type and the name it gives them, in its order, and then
+the rest with the name they have in the XES file and the type of the default
+mapping. With **`--xes-ignore`** only the attributes that appear in the schema
+are loaded:
+
+```
+$ dltl-mc --log-file examples/sample.xes --xes-schema examples/sample.schema.xml --xes-ignore
+```
+
+```
+$ dltl-mc --log-file examples/sample.xes --xes-schema examples/sample.schema.xml
+----------------------------------------
+file:      examples/sample.xes
+#traces:   3
+#events:   17
+#atomics:  4
+att. desc: ['aE', 'nV', '@att', '$p', 'nTime', 'sResource']
+----------------------------------------
+DLTL -> F x.(a & X F y.(b & "(x,y)y[Time] - x[Time] <= 60000"))
+1,2,33.33,0.0
+DLTL -> _WHO
+id1
+```
+
+(an `a` event followed, within a minute, by a `b` event). `_WRITE` saves the
+results next to the log, as `examples/sample.res`, `.norm` and `.forms`.
+
+**Values.** The model loaded from an XES log is one that a `.mod` file can
+express. That format has no quoting, so some values are adapted:
+
+* the value of an atomic attribute, and the trace identifier, become
+  identifiers: every character that cannot be part of one is replaced by `_`,
+  repeated `_` are collapsed and a leading digit gets a `_` in front
+  (`Hand washing` → `Hand_washing`, `event-7` → `event_7`, `123-test` →
+  `_123_test`), so that they can be written in formulas;
+* in strings, and in the items of sets and dictionaries, only the separators
+  of the `.mod` format (`&`, `,`, `;`, `=`, tabs and line breaks) are
+  replaced by `_`: `John Doe - Manager` is kept, `A&B` becomes `A_B`;
+* an attribute that an event does not have gets the atomic proposition `_`,
+  the string `''`, the number `0`, `False` or an empty collection;
+* a value that does not fit the type the schema asks for (a non-numeric
+  string for `n`) stops the load with an error.
+
+Only the attributes of the events are loaded (not those of the traces or of
+the log), nested attributes are ignored and a list or container cannot
+contain another one.
+
+`examples/xes-example/` applies all this to a real log, that of the
+Conformance Checking Challenge 2019 (recorded procedures of central venous
+catheter installation), with a schema and a session explained step by step:
+see [examples/xes-example/README.md](examples/xes-example/README.md).
 
 ## Formulas
 
@@ -426,6 +572,17 @@ for summary in session.check_formula('F x.("(x)x[V] == ?v")'):
 session.execute("_WRITE")
 ```
 
+`Log.load` reads an XES log too when the path ends in `.xes` or `.xes.gz`;
+`load_xes` takes the options of the command line:
+
+```python
+from dltl import Session, load_xes
+
+log = load_xes("examples/sample.xes", schema="examples/sample.schema.xml")
+#     also: trace_id_key="concept:name", ignore=False
+session = Session(log)
+```
+
 Lower level, `dltl.parser.parse_formula` builds the formula and
 `dltl.evaluator.Evaluator(log.column_index).eval_formula(node, trace)` returns
 the value of the formula at every event of a trace.
@@ -439,13 +596,15 @@ src/dltl/           the package
   parser.py           lexer and parser
   evaluator.py        evaluation of formulas over a trace
   log.py              loading of .mod models, saving of results
+  xes.py              loading of XES event logs
   macros.py           macro expansion
   session.py          session: results, macros, commands
   propositions.py     default user propositions (PROP)
   cli.py              command line
 tests/              pytest suite (tests/golden holds the reference output)
 examples/           example models and formulas; examples/synthea is a semantic
-                    example with SPARQL-backed propositions (needs pyoxigraph)
+                    example with SPARQL-backed propositions (needs pyoxigraph);
+                    examples/xes-example is a real XES event log
 docs/grammar.md     formal grammar and operator precedence
 docs/architecture.md  technical description of the design and implementation
 ```
@@ -477,8 +636,8 @@ use the SIMPDA 2017 paper referenced above.
 
 ## Test suite
 
-The `tests/` directory contains a pytest suite of 69 test cases, organised in
-eight modules. The tests need `pytest` and `ruff`, which are not part of the
+The `tests/` directory contains a pytest suite of 116 test cases, organised in
+ten modules. The tests need `pytest` and `ruff`, which are not part of the
 standard library, so they are run inside a virtual environment created from
 the repository root:
 
@@ -566,6 +725,17 @@ independence of two models loaded in the same process; rejection of unknown
 attribute types, of lines with a wrong number of values and of missing files;
 the value casting functions; and the generation of the information text, the
 `_WHO`/`_WHO_NOT` answers and the result files.
+
+**XES event logs** (`test_xes.py`, 42 cases). The conversion rules
+(identifiers, separators, timestamps); the default mapping of every XES type
+and the values of missing attributes; attributes that first appear late in
+the log; the mapping schema (types, names, order, `ignore`, the trace
+identifier) and the rejection of invalid schemas, values and files; gzipped
+logs and `Log.load`; and, on `examples/sample.xes`, that the model loaded
+from XES is the model of `examples/sample.mod` and reproduces the reference
+session and its result files. The command-line options for XES are tested
+through `main`, and the formulas of `examples/xes-example` are checked
+against `tests/golden/xes-example.stdout`.
 
 **Macro expansion** (`test_macros.py`, 7 cases). Formulas without macros,
 with a single macro, with several macros (Cartesian product, in order),

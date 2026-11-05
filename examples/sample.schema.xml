@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Mapping schema for sample.xes: XES attribute -> type and name in the model -->
+<container key="mod:schema">
+    <string key="concept:name" value="aE"/>
+    <string key="V" value="nV"/>
+    <string key="att" value="@att"/>
+    <string key="p" value="$p"/>
+    <string key="time:timestamp" value="nTime"/>
+    <string key="org:resource" value="sResource"/>
+</container>

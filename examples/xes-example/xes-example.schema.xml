@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Mapping schema for xes-example.xes: XES attribute -> type and name in the model -->
+<container key="mod:schema">
+    <string key="concept:name" value="aactivity"/>
+    <string key="lifecycle:transition" value="atransition"/>
+    <string key="org:resource" value="aresource"/>
+    <string key="time:timestamp" value="ntimestamp"/>
+    <string key="RESOURCE" value="aRESOURCE"/>
+    <string key="ROUND" value="sROUND"/>
+    <string key="EVENTID" value="aEVENTID"/>
+    <string key="ACTIVITY" value="sACTIVITY"/>
+    <string key="STAGE" value="sSTAGE"/>
+    <string key="VIDEOSTART" value="nVIDEOSTART"/>
+    <string key="VIDEOEND" value="nVIDEOEND"/>
+</container>

@@ -23,6 +23,10 @@ Command-line interface of the model checker.
 
     dltl-mc --log-file <model> [--init-file F] [--formula-file F]
             [--no-interactive] [--multi-line] [--propositions F.py]
+            [--xes-schema F.xml] [--xes-trace-id-key KEY] [--xes-ignore]
+
+``<model>`` is a ``.mod`` trace model or an XES event log (``.xes``), which is
+read directly; the ``--xes-*`` options say how its attributes are mapped.
 
 The legacy ``key=value`` syntax is also accepted:
 
@@ -40,8 +44,9 @@ from types import ModuleType
 from typing import TextIO
 
 from dltl import __version__
-from dltl.log import Log
+from dltl.log import Log, xes_root
 from dltl.session import Session
+from dltl.xes import DEFAULT_TRACE_ID_KEY, load_xes
 
 PROMPT = "DLTL -> "
 MULTI_LINE_END = '$'
@@ -72,11 +77,13 @@ def normalize_legacy_argv(argv: list[str]) -> list[str]:
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="dltl-mc",
-        description="Model checker for DLTL formulas over the traces of a .mod file.",
+        description="Model checker for DLTL formulas over the traces of a .mod file "
+                    "or of an XES event log.",
         epilog="The legacy syntax key=value (e.g. log-file=model interactive=false) "
                "is also accepted.")
     p.add_argument('--log-file', required=True, metavar='MODEL',
-                   help="trace model, with or without the .mod suffix")
+                   help="trace model: a .mod file, with or without the suffix, or an XES "
+                        "event log (.xes); gzipped files (.mod.gz, .xes.gz) are accepted")
     p.add_argument('--init-file', metavar='FILE',
                    help="file with commands executed before reading formulas")
     p.add_argument('--formula-file', metavar='FILE',
@@ -88,6 +95,19 @@ def build_parser() -> argparse.ArgumentParser:
                    help="show a prompt when reading formulas from standard input")
     p.add_argument('--multi-line', action='store_true',
                    help=f"formulas may span several lines and end with '{MULTI_LINE_END}'")
+    xes = p.add_argument_group("XES event logs (--log-file LOG.xes)")
+    xes.add_argument('--xes-schema', metavar='FILE.xml',
+                     help="XML file with the mod:schema container that gives a type and a "
+                          "name to the attributes of the events (default: concept:name is "
+                          "an atomic proposition)")
+    xes.add_argument('--xes-trace-id-key', metavar='KEY',
+                     help="trace attribute used as trace identifier "
+                          f"(default: {DEFAULT_TRACE_ID_KEY})")
+    xes.add_argument('--xes-ignore', action='store_true',
+                     help="load only the attributes that appear in the schema (by default "
+                          "every attribute is loaded: those of the schema with its types "
+                          "and names, the rest with their XES name and a type derived from "
+                          "their XES type)")
     p.add_argument('--version', action='version', version=f"%(prog)s {__version__}")
     return p
 
@@ -137,6 +157,15 @@ def load_propositions(path: str | None) -> ModuleType:
     return module
 
 
+def load_log(args: argparse.Namespace) -> Log:
+    """Load the model named by ``--log-file``: an XES event log or a ``.mod`` file."""
+    if xes_root(args.log_file) is None:
+        return Log.load(args.log_file)
+    return load_xes(args.log_file, schema=args.xes_schema,
+                    trace_id_key=args.xes_trace_id_key or DEFAULT_TRACE_ID_KEY,
+                    ignore=args.xes_ignore)
+
+
 # ---------------------------------------------------------------------------
 
 def main(argv: list[str] | None = None) -> int:
@@ -146,8 +175,11 @@ def main(argv: list[str] | None = None) -> int:
         parser.print_help(sys.stderr)
         return 2
     args = parser.parse_args(normalize_legacy_argv(argv))
+    if xes_root(args.log_file) is None and (args.xes_schema or args.xes_trace_id_key
+                                            or args.xes_ignore):
+        parser.error("the --xes-* options need an XES event log (--log-file LOG.xes)")
 
-    for path in (args.init_file, args.formula_file, args.propositions):
+    for path in (args.init_file, args.formula_file, args.propositions, args.xes_schema):
         if path is not None:
             try:
                 open(path).close()
@@ -158,7 +190,7 @@ def main(argv: list[str] | None = None) -> int:
     try:
         props = load_propositions(args.propositions)
         start = time.time()
-        log = Log.load(args.log_file)
+        log = load_log(args)
         loading_time = time.time() - start
     except (OSError, ValueError, ImportError) as e:
         print(f"Error: {e}", file=sys.stderr)

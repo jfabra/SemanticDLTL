@@ -1,0 +1,292 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- The model of sample.mod as an XES event log, with a timestamp and a resource per event -->
+<log xes.version="1.0" xes.features="nested-attributes" xmlns="http://www.xes-standard.org/">
+	<extension name="Concept" prefix="concept" uri="http://www.xes-standard.org/concept.xesext"/>
+	<extension name="Time" prefix="time" uri="http://www.xes-standard.org/time.xesext"/>
+	<extension name="Organizational" prefix="org" uri="http://www.xes-standard.org/org.xesext"/>
+	<classifier name="Activity" keys="concept:name"/>
+	<trace>
+		<string key="concept:name" value="id0"/>
+		<event>
+			<string key="concept:name" value="a"/>
+			<int key="V" value="4"/>
+			<list key="att">
+				<values>
+					<string key="item" value="a"/>
+					<int key="item" value="1"/>
+				</values>
+			</list>
+			<container key="p">
+				<int key="a" value="1"/>
+				<int key="b" value="2"/>
+			</container>
+			<date key="time:timestamp" value="2024-03-04T09:00:00.000+01:00"/>
+			<string key="org:resource" value="Ana"/>
+		</event>
+		<event>
+			<string key="concept:name" value="a"/>
+			<int key="V" value="1"/>
+			<list key="att">
+				<values>
+					<string key="item" value="a"/>
+					<int key="item" value="1"/>
+				</values>
+			</list>
+			<container key="p">
+				<int key="a" value="1"/>
+				<int key="b" value="3"/>
+			</container>
+			<date key="time:timestamp" value="2024-03-04T09:00:20.000+01:00"/>
+			<string key="org:resource" value="Luis"/>
+		</event>
+	</trace>
+	<trace>
+		<string key="concept:name" value="id1"/>
+		<event>
+			<string key="concept:name" value="a"/>
+			<int key="V" value="4"/>
+			<list key="att">
+				<values>
+					<string key="item" value="a"/>
+					<int key="item" value="1"/>
+				</values>
+			</list>
+			<container key="p">
+				<int key="a" value="1"/>
+				<int key="b" value="2"/>
+			</container>
+			<date key="time:timestamp" value="2024-03-04T10:30:00.000+01:00"/>
+			<string key="org:resource" value="Luis"/>
+		</event>
+		<event>
+			<string key="concept:name" value="a"/>
+			<int key="V" value="1"/>
+			<list key="att">
+				<values>
+					<string key="item" value="a"/>
+					<int key="item" value="1"/>
+				</values>
+			</list>
+			<container key="p">
+				<int key="a" value="1"/>
+				<int key="b" value="2"/>
+			</container>
+			<date key="time:timestamp" value="2024-03-04T10:30:20.000+01:00"/>
+			<string key="org:resource" value="Marta"/>
+		</event>
+		<event>
+			<string key="concept:name" value="b"/>
+			<int key="V" value="1"/>
+			<list key="att">
+				<values>
+					<string key="item" value="a"/>
+					<int key="item" value="2"/>
+				</values>
+			</list>
+			<container key="p">
+				<int key="a" value="1"/>
+				<int key="b" value="2"/>
+			</container>
+			<date key="time:timestamp" value="2024-03-04T10:31:05.000+01:00"/>
+			<string key="org:resource" value="Ana"/>
+		</event>
+		<event>
+			<string key="concept:name" value="a"/>
+			<int key="V" value="1"/>
+			<list key="att">
+				<values>
+					<string key="item" value="a"/>
+					<int key="item" value="3"/>
+				</values>
+			</list>
+			<container key="p">
+				<int key="a" value="1"/>
+				<int key="b" value="2"/>
+			</container>
+			<date key="time:timestamp" value="2024-03-04T10:31:35.000+01:00"/>
+			<string key="org:resource" value="Luis"/>
+		</event>
+		<event>
+			<string key="concept:name" value="a"/>
+			<int key="V" value="1"/>
+			<list key="att">
+				<values>
+					<string key="item" value="a"/>
+					<int key="item" value="4"/>
+				</values>
+			</list>
+			<container key="p">
+				<int key="a" value="1"/>
+				<int key="b" value="2"/>
+			</container>
+			<date key="time:timestamp" value="2024-03-04T10:33:05.000+01:00"/>
+			<string key="org:resource" value="Marta"/>
+		</event>
+		<event>
+			<string key="concept:name" value="b"/>
+			<int key="V" value="1"/>
+			<list key="att">
+				<values>
+					<string key="item" value="a"/>
+					<int key="item" value="5"/>
+				</values>
+			</list>
+			<container key="p">
+				<int key="a" value="1"/>
+				<int key="b" value="2"/>
+			</container>
+			<date key="time:timestamp" value="2024-03-04T10:33:20.000+01:00"/>
+			<string key="org:resource" value="Ana"/>
+		</event>
+		<event>
+			<string key="concept:name" value="a"/>
+			<int key="V" value="10"/>
+			<list key="att">
+				<values>
+					<string key="item" value="a"/>
+					<int key="item" value="6"/>
+				</values>
+			</list>
+			<container key="p">
+				<int key="a" value="1"/>
+				<int key="b" value="2"/>
+			</container>
+			<date key="time:timestamp" value="2024-03-04T10:34:20.000+01:00"/>
+			<string key="org:resource" value="Luis"/>
+		</event>
+		<event>
+			<string key="concept:name" value="b"/>
+			<int key="V" value="1"/>
+			<list key="att">
+				<values>
+					<string key="item" value="a"/>
+					<int key="item" value="1"/>
+				</values>
+			</list>
+			<container key="p">
+				<int key="a" value="1"/>
+				<int key="b" value="1"/>
+			</container>
+			<date key="time:timestamp" value="2024-03-04T10:36:20.000+01:00"/>
+			<string key="org:resource" value="Marta"/>
+		</event>
+	</trace>
+	<trace>
+		<string key="concept:name" value="id2"/>
+		<event>
+			<string key="concept:name" value="b"/>
+			<int key="V" value="2"/>
+			<list key="att">
+				<values>
+					<string key="item" value="a"/>
+					<int key="item" value="2"/>
+				</values>
+			</list>
+			<container key="p">
+				<int key="a" value="1"/>
+				<int key="b" value="3"/>
+			</container>
+			<date key="time:timestamp" value="2024-03-05T08:15:00.000+01:00"/>
+			<string key="org:resource" value="Marta"/>
+		</event>
+		<event>
+			<string key="concept:name" value="c"/>
+			<int key="V" value="2"/>
+			<list key="att">
+				<values>
+					<string key="item" value="a"/>
+					<int key="item" value="3"/>
+				</values>
+			</list>
+			<container key="p">
+				<int key="a" value="1"/>
+				<int key="b" value="2"/>
+			</container>
+			<date key="time:timestamp" value="2024-03-05T08:15:20.000+01:00"/>
+			<string key="org:resource" value="Ana"/>
+		</event>
+		<event>
+			<string key="concept:name" value="c"/>
+			<int key="V" value="2"/>
+			<list key="att">
+				<values>
+					<string key="item" value="a"/>
+					<int key="item" value="4"/>
+				</values>
+			</list>
+			<container key="p">
+				<int key="a" value="1"/>
+				<int key="b" value="2"/>
+			</container>
+			<date key="time:timestamp" value="2024-03-05T08:16:05.000+01:00"/>
+			<string key="org:resource" value="Luis"/>
+		</event>
+		<event>
+			<string key="concept:name" value="c"/>
+			<int key="V" value="2"/>
+			<list key="att">
+				<values>
+					<string key="item" value="a"/>
+					<int key="item" value="5"/>
+				</values>
+			</list>
+			<container key="p">
+				<int key="a" value="10"/>
+				<int key="b" value="1"/>
+			</container>
+			<date key="time:timestamp" value="2024-03-05T08:16:35.000+01:00"/>
+			<string key="org:resource" value="Marta"/>
+		</event>
+		<event>
+			<string key="concept:name" value="b"/>
+			<int key="V" value="2"/>
+			<list key="att">
+				<values>
+					<string key="item" value="a"/>
+					<int key="item" value="6"/>
+				</values>
+			</list>
+			<container key="p">
+				<int key="a" value="10"/>
+				<int key="b" value="22"/>
+			</container>
+			<date key="time:timestamp" value="2024-03-05T08:18:05.000+01:00"/>
+			<string key="org:resource" value="Ana"/>
+		</event>
+		<event>
+			<string key="concept:name" value="z"/>
+			<int key="V" value="2"/>
+			<list key="att">
+				<values>
+					<string key="item" value="z"/>
+					<int key="item" value="99"/>
+					<string key="item" value="Mundo"/>
+				</values>
+			</list>
+			<container key="p">
+				<int key="a" value="1"/>
+				<int key="b" value="2"/>
+			</container>
+			<date key="time:timestamp" value="2024-03-05T08:18:20.000+01:00"/>
+			<string key="org:resource" value="Luis"/>
+		</event>
+		<event>
+			<string key="concept:name" value="b"/>
+			<int key="V" value="10"/>
+			<list key="att">
+				<values>
+					<string key="item" value="z"/>
+					<string key="item" value="input=kkkkkkk"/>
+					<int key="item" value="99"/>
+					<string key="item" value="Mundo"/>
+				</values>
+			</list>
+			<container key="p">
+				<int key="a" value="1"/>
+				<int key="b" value="2"/>
+			</container>
+			<date key="time:timestamp" value="2024-03-05T08:19:20.000+01:00"/>
+			<string key="org:resource" value="Marta"/>
+		</event>
+	</trace>
+</log>
