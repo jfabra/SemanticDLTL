@@ -248,10 +248,19 @@ The test-suite runs this file against a store built on the fly and compares
 the results with `tests/golden/synthea.stdout` (the test is skipped when
 pyoxigraph is not installed).
 
+## The benchmark formulas
+
+[`benchmark/`](benchmark/README.md) holds a larger set: 50 formulas (purely
+temporal, with freeze variables over the attributes of the log, and with
+semantic propositions), each followed by `_WHO`, together with the output of
+checking them on eight logs: five with traces of 6 to 20 events, from 50 to
+100 000 traces, and the four ranges of trace length with 10 000 traces.
+
 ## The other logs
 
 Fourteen logs were generated for the experiments, with 50, 100, 500, 1000
-and 5000 traces and four ranges of trace length. All but the smallest are
+and 5000 traces and four ranges of trace length, and six more, of 10 000,
+50 000 and 100 000 traces, for the [benchmark formulas](benchmark/README.md). All but the smallest are
 gzipped; `--log-file` reads a `.mod.gz` directly and `build_store.py` reads
 a `.nq.gz`:
 
@@ -268,6 +277,9 @@ SYNTHEA_STORE=mystore dltl-mc --log-file examples/synthea/logs/log_500_21_40.mod
 | 500 | 6-20, 21-40, 41-60 | `log_500_*` |
 | 1000 | 6-20, 21-40 | `log_1000_*` |
 | 5000 | 6-20 | `log_5000_6_20` (38 579 events, 213 024 quads) |
+| 10 000 | 6-20, 21-40, 41-60, 61-80 | `log_10000_*` (64 705 to 261 972 events, 379 745 to 1 547 277 quads) |
+| 50 000 | 6-20 | `log_50000_6_20` (324 003 events, 1 899 520 quads) |
+| 100 000 | 6-20 | `log_100000_6_20` (648 926 events, 3 807 371 quads) |
 
 Each proposition call is one SPARQL query, so a formula with a semantic
 proposition costs one query per event of the log (plus one per pair of

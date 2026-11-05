@@ -6,6 +6,7 @@
 #   make check    lint + test
 #   make sample   run the checker on the sample model (batch mode)
 #   make synthea  build the Oxigraph store of the semantic example and run its formulas
+#   make synthea-benchmark  build the store and run the 50 benchmark formulas of the semantic example
 #   make xes-example  run the checker on the XES example log (batch mode)
 #   make clean    remove caches, build artefacts and result files of the examples
 
@@ -13,7 +14,7 @@ PYTHON ?= python3
 VENV   ?= .venv
 BIN    := $(VENV)/bin
 
-.PHONY: venv test lint check sample synthea xes-example clean
+.PHONY: venv test lint check sample synthea synthea-benchmark xes-example clean
 
 venv: $(BIN)/pytest
 
@@ -40,6 +41,13 @@ synthea: venv
 	$(BIN)/dltl-mc --log-file examples/synthea/logs/log_50_6_20 \
 	    --propositions examples/synthea/propositions.py \
 	    --formula-file examples/synthea/formulas.txt --no-interactive
+
+synthea-benchmark: venv
+	$(BIN)/pip install -q -e ".[synthea]"
+	$(BIN)/python examples/synthea/build_store.py examples/synthea/logs/log_50_6_20.nq --replace
+	$(BIN)/dltl-mc --log-file examples/synthea/logs/log_50_6_20 \
+	    --propositions examples/synthea/propositions.py \
+	    --formula-file examples/synthea/benchmark/formulas.txt --no-interactive
 
 xes-example: venv
 	$(BIN)/dltl-mc --log-file examples/xes-example/xes-example.xes \

@@ -1,0 +1,107 @@
+; SemanticDLTL - Synthea example: the 50 benchmark formulas.
+; Each formula is followed by _WHO, which lists the traces that satisfy it.
+; Run with (see README.md in this directory):
+;   dltl-mc --log-file examples/synthea/logs/log_50_6_20 --propositions examples/synthea/propositions.py \
+;           --formula-file examples/synthea/benchmark/formulas.txt --no-interactive
+; (the Oxigraph store of the log must have been built first with build_store.py)
+
+G (x.("(x)PROP.Asthma(x[Event])") -> at_AllergyOnset)
+_WHO
+G ((breast_cancer & at_MedicationOrder) -> x.("(x)PROP.Inhaled_steroid_therapy(x[Event])"))
+_WHO
+G ((Allergy_Panel & SCTID_252325008) -> (Practitioner & x.("(x)PROP.Gynecology_service(x[Event])")))
+_WHO
+G (Potential_COPD_Smoker -> X x.("(x)PROP.Smoking_cessation_therapy(x[Event])"))
+_WHO
+G (at_AllergyOnset -> x.("(x)PROP.Atopic_dermatitis(x[Event])"))
+_WHO
+G (Drug_Allergy_Incidence_Submodule -> (at_MedicationOrder -> x.("(x)PROP.Administration_of_intravenous_fluids(x[Event])")))
+_WHO
+G (Allergist_Guard -> (!(x.("(x)PROP.Malignant_neoplasm_of_breast(x[Event])"))))
+_WHO
+G (Prescribe_Epipen -> x.("(x)PROP.Allergic_disposition(x[Event])"))
+_WHO
+G (Administer_Allergy_Test -> F (x.("(x)PROP.Asthma_screening(x[Event])") | x.("(x)PROP.Allergy_screening_test(x[Event])")))
+_WHO
+G (Allergy_Unspecified -> x.("(x)PROP.Contact_dermatitis(x[Event])"))
+_WHO
+G (Administer_Allergy_Test & x.(X (Allergy_Panel & y.("(x,y)x[Actor] == y[Actor]"))))
+_WHO
+G (Allergist_Initial_Visit & x.(F (End_Allergist_Initial_Visit & y.("(x,y)y[Timestamp] - x[Timestamp] < 3600"))))
+_WHO
+G (Drug_Allergy_Incidence_Submodule & x.(F (General_Allergy_CarePlan & y.("(x,y)y[#] == x[#] + 3"))))
+_WHO
+G (Initial & x.(G (at_Procedure -> y.("(x,y)x[Timestamp] < y[Timestamp]"))))
+_WHO
+G (Physician & Allergist_Initial_Visit & x.(G (at_MedicationOrder -> y.("(x,y)x[Actor] == y[Actor]"))))
+_WHO
+G (Environmental_Allergy_Incidence_Submodule & x.(F (Food_Allergy_Incidence_Submodule & y.("(x,y)x[Timestamp] < y[Timestamp]"))))
+_WHO
+G (Practitioner & at_Encounter & x.(F (at_Terminal & y.("(x,y)x[Actor] != y[Actor]"))))
+_WHO
+G (Atopic & x.(F (Prescribe_OTC_Antihistamine & y.("(x,y)y[#] <= x[#] + 10"))))
+_WHO
+G (Clinical_System & at_Guard & x.(X (at_Delay & y.("(x,y)x[Actor] == y[Actor]"))))
+_WHO
+G (Immunotherapy_Submodule & y.(O (Allergy_Panel & x.("(x,y)x[#] < y[#]"))))
+_WHO
+G (at_AllergyOnset -> x.(F (Atopic & y.("(x,y)y[Timestamp] - x[Timestamp] <= 7200"))))
+_WHO
+G (Allergist_Initial_Visit -> (at_Encounter U at_EncounterEnd))
+_WHO
+G (Prescribe_Epipen -> (Administer_Allergy_Test S Initial))
+_WHO
+G (Delay_For_Atopy -> ! X Not_Atopic)
+_WHO
+G (Living_With_Allergies -> (Living_With_Allergies U Terminal))
+_WHO
+G (Delay_For_Allergist_Initial_Visit -> x.(F (Allergist_Initial_Visit & y.("(x,y)y[Timestamp] - x[Timestamp] >= 86400"))))
+_WHO
+Initial & (Y !true)
+_WHO
+G ((at_CallSubmodule & Immunotherapy_Submodule) -> x.(O (Allergy_Panel & y.("(x,y)x[Timestamp] - y[Timestamp] == 2592000"))))
+_WHO
+G (Potential_COPD_Nonsmoker -> ! O Potential_COPD_Smoker)
+_WHO
+G (at_Simple -> (x.(F (at_Simple & y.("(x,y)y[Timestamp] - x[Timestamp] <= 14400")) | F Terminal)))
+_WHO
+G ((allergies & !Allergist_Guard) -> X General_Allergy_CarePlan)
+_WHO
+G (at_MedicationOrder -> Pharmacist)
+_WHO
+G (Allergy_Unspecified -> !Radiologist)
+_WHO
+F (Clinical_System & Age_Guard & X at_Guard)
+_WHO
+G (copd -> ((Potential_COPD_Smoker | Potential_COPD_Nonsmoker) U Terminal))
+_WHO
+G ((at_CallSubmodule & Drug_Allergy_Incidence_Submodule) -> !(X at_CarePlanStart | X X at_CarePlanStart | X X X at_CarePlanStart))
+_WHO
+G ((Allergist_Initial_Visit & at_Initial) -> x.(F (End_Allergist_Initial_Visit & y.("(x,y)x[Actor] == y[Actor] and x[Actor] == 'Physician'"))))
+_WHO
+G (fibromyalgia -> (Initial -> X (at_Simple & X (at_Simple & X at_Simple))))
+_WHO
+G (Care_Manager -> (General_Allergy_CarePlan | Delay_For_Atopy))
+_WHO
+G (at_Procedure -> x.("(x)x[Actor] == 'Practitioner' and x[Actor] != 'Clinical_System'"))
+_WHO
+G (x.("(x)x[#] > 100") -> (F Terminal & !X X X X X X Terminal))
+_WHO
+G (at_Delay & x.("(x)x[Timestamp] < 0") -> X Terminal)
+_WHO
+G (x.("(x)PROP.Chronic_obstructive_bronchitis(x[Event])") -> (O Potential_COPD_Smoker & y.("(y)y[Actor] == 'Physician'")))
+_WHO
+G ((Administer_Allergy_Test & at_Procedure) -> X (Allergy_Panel & at_CallSubmodule))
+_WHO
+G (at_Encounter -> (!at_Terminal U at_EncounterEnd))
+_WHO
+G ((Allergist_Guard & at_Guard) -> X (!at_Terminal & (!at_Terminal U at_Procedure)))
+_WHO
+G (Initial -> X (Terminal | F !Terminal))
+_WHO
+G (x.("(x)PROP.Malignant_neoplasm_of_colon(x[Event])") -> F (Colonoscopy & F General_Allergy_CarePlan))
+_WHO
+G ((breast_cancer & at_Initial) -> X (!(x.("(x)PROP.Surgical_procedure(x[Event])" | "(x)PROP.Therapeutic_procedure(x[Event])")) U Female))
+_WHO
+G (dermatitis -> !Prescribe_Epipen)
+_WHO

@@ -197,7 +197,7 @@ This run is exactly what the regression tests reproduce (see
 
 ## A semantic example: Synthea and SNOMED CT
 
-`examples/synthea/` contains fourteen event logs (50 to 5000 traces) that
+`examples/synthea/` contains twenty event logs (50 to 100 000 traces) that
 simulate patients going through ten Synthea disease modules (asthma,
 allergies, breast and colorectal cancer, COPD, epilepsy, ...). Each event of
 a log has, besides its attributes, its own **named graph** in an RDF

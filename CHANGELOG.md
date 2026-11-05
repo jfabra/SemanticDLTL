@@ -21,6 +21,15 @@
   Challenge 2019 (20 recorded procedures of central venous catheter
   installation, 1394 events; CC BY 4.0), with a mapping schema, formulas and a
   documented session. `make xes-example` runs it.
+- `examples/synthea/benchmark/`: the 50 benchmark formulas over the Synthea
+  logs, each followed by `_WHO`, with the output of checking them on eight
+  logs (50 to 100 000 traces of 6 to 20 events, and 10 000 traces in the four
+  ranges of trace length). `make synthea-benchmark` runs them on the small
+  log.
+- Six larger logs in `examples/synthea/logs` (`.mod.gz` and `.nq.gz`):
+  `log_10000_6_20`, `log_10000_21_40`, `log_10000_41_60`, `log_10000_61_80`,
+  `log_50000_6_20` and `log_100000_6_20` (up to 648 926 events), generated
+  with `generate_logs.py --seed 42 --base-time 1700000000`.
 
 ### Changed
 
