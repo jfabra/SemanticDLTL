@@ -629,7 +629,8 @@ GPL-3.0-or-later. See [LICENSE](LICENSE).
 The software is archived on Zenodo: DOI
 [10.5281/zenodo.22777412](https://doi.org/10.5281/zenodo.22777412) always
 resolves to the latest version, and each release has its own DOI
-(1.1.0: [10.5281/zenodo.22777413](https://doi.org/10.5281/zenodo.22777413)).
+(1.2.0: [10.5281/zenodo.23991412](https://doi.org/10.5281/zenodo.23991412);
+1.1.0: [10.5281/zenodo.22777413](https://doi.org/10.5281/zenodo.22777413)).
 To cite the tool, use [CITATION.cff](CITATION.cff) (GitHub shows a
 "Cite this repository" button with APA and BibTeX); to cite the method,
 use the SIMPDA 2017 paper referenced above.

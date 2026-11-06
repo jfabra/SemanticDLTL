@@ -23,8 +23,8 @@ identifiers:
     value: 10.5281/zenodo.22777412
     description: "Concept DOI: resolves to the latest version"
   - type: doi
-    value: 10.5281/zenodo.22777413
-    description: "Version 1.1.0"
+    value: 10.5281/zenodo.23991412
+    description: "Version 1.2.0"
 repository-code: "https://github.com/jfabra/SemanticDLTL"
 license: GPL-3.0-or-later
 url: "https://github.com/jfabra/SemanticDLTL"

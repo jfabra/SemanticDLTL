@@ -2,6 +2,8 @@
 
 ## 1.2.0 (2026-11-06)
 
+Archived on Zenodo (DOI 10.5281/zenodo.23991412).
+
 ### New
 
 - XES event logs (`.xes`, or gzipped `.xes.gz`) are read directly:
